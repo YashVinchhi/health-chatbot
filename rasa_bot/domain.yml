@@ -3,78 +3,48 @@ version: "3.1"
 intents:
   - greet
   - goodbye
-  - affirm
-  - deny
-  - ask_symptom_info
-  - ask_prevention
-  - ask_vaccine_schedule
-  - ask_outbreak_alerts
-  - out_of_scope
+  - ask_symptoms
+  - ask_vaccination
+  - ask_outbreak_info
+  - ask_emergency
+  - ask_general_health
+  - ask_medication
   - bot_challenge
-
-entities:
-  - symptom
-  - age
-  - location
-  - duration
-  - severity
-
-slots:
-  symptom:
-    type: text
-    influence_conversation: true
-    mappings:
-    - type: from_entity
-      entity: symptom
-  age:
-    type: float
-    influence_conversation: true
-    mappings:
-    - type: from_entity
-      entity: age
-  location:
-    type: text
-    influence_conversation: true
-    mappings:
-    - type: from_entity
-      entity: location
-  duration:
-    type: text
-    influence_conversation: true
-    mappings:
-    - type: from_entity
-      entity: duration
-  severity:
-    type: text
-    influence_conversation: true
-    mappings:
-      - type: from_entity
-        entity: severity
 
 responses:
   utter_greet:
-    - text: "Hello! I'm your health assistant. How can I help you today?"
-    - text: "Hi! I'm here to help you with health information. What would you like to know?"
+  - text: "Hello! I'm your health assistant. How can I help you today?"
+  - text: "Hi there! I'm here to help with your health questions. What would you like to know?"
 
   utter_goodbye:
-    - text: "Goodbye! Take care of your health."
-    - text: "Stay healthy! Goodbye!"
+  - text: "Goodbye! Take care of your health. Feel free to ask if you need help again."
+  - text: "Bye! Stay healthy and don't hesitate to reach out if you have health concerns."
 
-  utter_default:
-    - text: "I'm not sure I understand. Could you rephrase that?"
-    - text: "I didn't quite get that. Could you say it differently?"
+  utter_symptoms_help:
+  - text: "I understand you're experiencing symptoms. Can you describe them in more detail? For serious symptoms like chest pain, difficulty breathing, or severe pain, please seek immediate medical attention."
 
-  utter_ask_rephrase:
-    - text: "I'm not sure I understand. Could you rephrase that?"
+  utter_vaccination_info:
+  - text: "I can help with vaccination information. Are you looking for general vaccine schedules, COVID-19 vaccines, or specific vaccines for travel/age groups?"
+
+  utter_outbreak_info:
+  - text: "I can provide information about current health alerts and disease outbreaks. Would you like information about your local area or a specific disease?"
+
+  utter_emergency:
+  - text: "🚨 For medical emergencies, please call emergency services immediately (911 in US, 108 in India). If this is urgent but not life-threatening, contact your healthcare provider or visit the nearest emergency room."
+
+  utter_general_health:
+  - text: "Here are some general health tips: maintain a balanced diet, exercise regularly, get adequate sleep (7-9 hours), stay hydrated, wash hands frequently, and have regular health checkups."
+
+  utter_medication_info:
+  - text: "⚠️ I cannot provide specific medication advice. Please consult with a healthcare professional or pharmacist for medication recommendations, dosages, and potential interactions."
 
   utter_iamabot:
-    - text: "I am a health assistant bot, designed to help you with health-related questions."
+  - text: "I am a health assistant bot designed to provide general health information and guidance. For specific medical advice, please consult with healthcare professionals."
 
 actions:
-  - action_check_vaccine_schedule
-  - action_get_symptom_info
-  - action_send_outbreak_alert
-  - action_get_prevention_tips
+  - action_get_vaccination_info
+  - action_get_outbreak_info
+  - action_symptom_analysis
 
 session_config:
   session_expiration_time: 60

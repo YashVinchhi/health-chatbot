@@ -3,96 +3,104 @@ version: "3.1"
 nlu:
   - intent: greet
     examples: |
-      - hey
       - hello
       - hi
-      - hello there
+      - hey
       - good morning
       - good evening
-      - namaste
-      - नमस्ते
-      - हैलो
+      - hi there
+      - hello there
+      - hey there
 
   - intent: goodbye
     examples: |
       - bye
       - goodbye
-      - see you around
       - see you later
-      - धन्यवाद
-      - अलविदा
+      - talk to you later
+      - have a good day
+      - bye bye
+      - farewell
 
-  - intent: affirm
+  - intent: ask_symptoms
     examples: |
-      - yes
-      - indeed
-      - of course
-      - that sounds good
-      - correct
-      - okay
-      - sure
-      - हाँ
-      - ठीक है
+      - I have a fever
+      - I'm feeling sick
+      - I have a headache
+      - I have a cold
+      - I'm coughing
+      - I have a sore throat
+      - I feel nauseous
+      - I have body aches
+      - I'm having chest pain
+      - I have difficulty breathing
+      - I have stomach pain
+      - I feel dizzy
+      - I have a rash
+      - I'm vomiting
+      - I have diarrhea
 
-  - intent: deny
+  - intent: ask_vaccination
     examples: |
-      - no
-      - never
-      - I don't think so
-      - don't like that
-      - no way
-      - not really
-      - नहीं
-      - बिलकुल नहीं
+      - When should I get vaccinated?
+      - What vaccines do I need?
+      - Where can I get vaccinated?
+      - Tell me about COVID vaccine
+      - I need flu shot
+      - Vaccination schedule
+      - Vaccine side effects
+      - Is vaccination safe?
+      - Vaccine for children
+
+  - intent: ask_outbreak_info
+    examples: |
+      - Any disease outbreaks nearby?
+      - COVID cases in my area
+      - Health alerts
+      - Disease outbreaks
+      - Epidemic information
+      - Health warnings
+      - Flu outbreak
+      - Local health alerts
+
+  - intent: ask_emergency
+    examples: |
+      - Emergency
+      - I need immediate help
+      - Call ambulance
+      - Urgent medical help
+      - Emergency contact
+      - Hospital nearby
+      - Emergency room
+      - Critical condition
+      - Medical emergency
+
+  - intent: ask_general_health
+    examples: |
+      - How to stay healthy?
+      - Health tips
+      - Preventive measures
+      - Healthy lifestyle
+      - Diet advice
+      - Exercise recommendations
+      - Sleep tips
+      - Mental health
+      - Wellness advice
+
+  - intent: ask_medication
+    examples: |
+      - What medicine should I take?
+      - Medication for fever
+      - Drug interactions
+      - Medicine dosage
+      - Side effects
+      - Prescription help
+      - Over the counter medicine
+      - Pain relievers
 
   - intent: bot_challenge
     examples: |
       - are you a bot?
-      - are you a human?
+      - are you human?
       - am I talking to a bot?
       - am I talking to a human?
-      - क्या आप एक बॉट हैं?
-      - क्या मैं किसी इंसान से बात कर रहा हूं?
-
-  - intent: ask_symptom_info
-    examples: |
-      - what are the symptoms of [fever](symptom)
-      - i have [headache](symptom) for [2 days](duration)
-      - my child has [cough](symptom)
-      - [stomach pain](symptom) and [vomiting](symptom)
-      - [बुखार](symptom) के लक्षण क्या हैं
-      - मुझे [सिरदर्द](symptom) है
-
-  - intent: ask_vaccine_schedule
-    examples: |
-      - which vaccines are due for [2](age) year old
-      - vaccination schedule for [6](age) month baby
-      - next vaccine for [1](age) year child
-      - [12](age) month baby vaccines
-      - [2](age) साल के बच्चे का टीकाकरण
-      - [6](age) महीने के शिशु के टीके
-
-  - intent: ask_prevention
-    examples: |
-      - how to prevent malaria
-      - dengue prevention tips
-      - ways to avoid covid
-      - precautions for flu
-      - मलेरिया से बचाव
-      - डेंगू से कैसे बचें
-
-  - intent: ask_outbreak_alerts
-    examples: |
-      - any disease outbreak in [Mumbai](location)
-      - health alerts in [Delhi](location)
-      - current epidemic in [Pune](location)
-      - [बेंगलुरु](location) में कोई बीमारी का प्रकोप
-
-  - intent: out_of_scope
-    examples: |
-      - I want to order food
-      - What is the weather like?
-      - I want to book a flight
-      - Play some music
-      - खाना ऑर्डर करना है
-      - मौसम कैसा है?

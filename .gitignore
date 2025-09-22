@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -20,23 +19,25 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
+.venv/
 venv/
 ENV/
+env/
 
-# IDEs
-.idea/
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# IDE
 .vscode/
+.idea/
 *.swp
 *.swo
-
-# Environment variables
-.env
-
-# Rasa
-models/
-.rasa/
+*~
 
 # Logs
 *.log
@@ -46,12 +47,35 @@ logs/
 *.db
 *.sqlite3
 
-# Docker
-.docker/
+# Node modules (if any)
+node_modules/
 
-# Test coverage
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rasa
+models/
+*.tar.gz
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Coverage reports
 htmlcov/
 .coverage
 .coverage.*
-coverage.xml
-*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/

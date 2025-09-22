@@ -61,4 +61,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 MIT License - see [LICENSE](LICENSE) for details.
 =======
 # health-chatbot
->>>>>>> b6193b6252525f113f7278f4b231f3a652dede1c
+> b6193b6252525f113f7278f4b231f3a652dede1c

@@ -11,8 +11,12 @@ rules:
       - intent: bot_challenge
       - action: utter_iamabot
 
-  - rule: Out-of-scope
+  - rule: Greet when user says hello
     steps:
-      - intent: out_of_scope
-      - action: utter_default
-      - action: utter_ask_rephrase
+      - intent: greet
+      - action: utter_greet
+
+  - rule: Emergency response
+    steps:
+      - intent: ask_emergency
+      - action: utter_emergency

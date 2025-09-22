@@ -1,9 +1,11 @@
 from typing import Any, Text, Dict, List
-import requests
-import os
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
-from rasa_sdk.events import SlotSet
+import requests
+import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://backend:8000")
 
@@ -124,5 +126,82 @@ class ActionGetPreventionTips(Action):
         except Exception as e:
             message = "Sorry, I'm having trouble accessing the prevention tips service."
         
+        dispatcher.utter_message(text=message)
+        return []
+
+class ActionGetVaccinationInfo(Action):
+    def name(self) -> Text:
+        return "action_get_vaccination_info"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        try:
+            # Call the vaccination service
+            response = requests.get("http://backend:8000/api/health/vaccination")
+            if response.status_code == 200:
+                data = response.json()
+                message = f"Vaccination Information:\n{data.get('message', 'Information retrieved successfully')}"
+            else:
+                message = "I'm having trouble accessing vaccination information right now. Please try again later."
+        except Exception as e:
+            logger.error(f"Error getting vaccination info: {e}")
+            message = "I'm having trouble accessing vaccination information right now. Please try again later."
+
+        dispatcher.utter_message(text=message)
+        return []
+
+class ActionGetOutbreakInfo(Action):
+    def name(self) -> Text:
+        return "action_get_outbreak_info"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        try:
+            # Call the outbreak service
+            response = requests.get("http://backend:8000/api/health/outbreak")
+            if response.status_code == 200:
+                data = response.json()
+                message = f"Outbreak Information:\n{data.get('message', 'Information retrieved successfully')}"
+            else:
+                message = "I'm having trouble accessing outbreak information right now. Please try again later."
+        except Exception as e:
+            logger.error(f"Error getting outbreak info: {e}")
+            message = "I'm having trouble accessing outbreak information right now. Please try again later."
+
+        dispatcher.utter_message(text=message)
+        return []
+
+class ActionSymptomAnalysis(Action):
+    def name(self) -> Text:
+        return "action_symptom_analysis"
+
+    def run(self, dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+
+        # Get the user's message
+        user_message = tracker.latest_message.get('text', '')
+
+        # Basic symptom analysis
+        emergency_symptoms = ['chest pain', 'difficulty breathing', 'severe pain', 'unconscious', 'bleeding']
+        serious_symptoms = ['fever', 'vomiting', 'severe headache', 'dizzy']
+
+        message = ""
+
+        # Check for emergency symptoms
+        if any(symptom in user_message.lower() for symptom in emergency_symptoms):
+            message = "🚨 URGENT: You mentioned symptoms that could be serious. Please seek immediate medical attention or call emergency services (911 in US, 108 in India)."
+        elif any(symptom in user_message.lower() for symptom in serious_symptoms):
+            message = "I understand you're experiencing concerning symptoms. While I can provide general information, it's important to consult with a healthcare professional for proper diagnosis and treatment. Consider contacting your doctor or visiting a clinic."
+        else:
+            message = "I hear that you're not feeling well. For any health concerns, it's always best to consult with a healthcare professional who can properly assess your symptoms and provide appropriate care."
+
+        # Add general advice
+        message += "\n\nIn the meantime, make sure to:\n• Stay hydrated\n• Get plenty of rest\n• Monitor your symptoms\n• Seek medical help if symptoms worsen"
+
         dispatcher.utter_message(text=message)
         return []

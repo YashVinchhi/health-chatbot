@@ -1,14 +1,18 @@
 version: "3.1"
 
 action_endpoint:
-  url: "http://rasa-actions:5055/webhook"
+  url: "http://localhost:5055/webhook"
 
 tracker_store:
   type: sql
   dialect: "postgresql"
-  url: "postgresql://postgres:postgres@postgres:5432/rasa"
+  # Use DB credentials from the .env (set to yash/root in this project)
+  url: "postgresql://yash:root@db:5432/rasa"
 
 event_broker:
   type: kafka
   url: kafka:9092
   topic: rasa_events
+
+rest:
+  url: "http://localhost:5005"

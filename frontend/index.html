@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthBot AI - Your Intelligent Health Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-decoration">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h1>HealthBot AI</h1>
+                </div>
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3>Quick Actions</h3>
+                    <button class="nav-item active" onclick="setActiveTab('chat')">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat Assistant</span>
+                    </button>
+                    <button class="nav-item" onclick="setActiveTab('symptoms')">
+                        <i class="fas fa-thermometer-half"></i>
+                        <span>Symptom Checker</span>
+                    </button>
+                    <button class="nav-item" onclick="setActiveTab('vaccines')">
+                        <i class="fas fa-syringe"></i>
+                        <span>Vaccinations</span>
+                    </button>
+                    <button class="nav-item" onclick="setActiveTab('emergency')">
+                        <i class="fas fa-ambulance"></i>
+                        <span>Emergency</span>
+                    </button>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Health Data</h3>
+                    <button class="nav-item" onclick="setActiveTab('alerts')">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Health Alerts</span>
+                    </button>
+                    <button class="nav-item" onclick="setActiveTab('hospitals')">
+                        <i class="fas fa-hospital"></i>
+                        <span>Nearby Hospitals</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <div class="status-dot online"></div>
+                    <span id="connectionStatus">Connected</span>
+                </div>
+                <button class="settings-btn" onclick="toggleSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Tab -->
+            <div id="chat-tab" class="tab-content active">
+                <div class="chat-header">
+                    <div class="header-info">
+                        <div class="bot-avatar">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="header-text">
+                            <h2>Health Assistant</h2>
+                            <p class="status-text">AI-powered health guidance • <span id="status">Online</span></p>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="action-btn" onclick="clearChat()" title="Clear Conversation">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                        <button class="action-btn" onclick="toggleTheme()" title="Toggle Theme">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                        <button class="action-btn" onclick="exportChat()" title="Export Conversation">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot-message welcome-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="sender-name">HealthBot AI</span>
+                                    <span class="message-time">now</span>
+                                </div>
+                                <div class="message-text">
+                                    <p>Welcome to HealthBot AI! 🏥 I'm your intelligent health assistant, powered by advanced AI.</p>
+                                    <div class="feature-grid">
+                                        <div class="feature-item">
+                                            <i class="fas fa-stethoscope"></i>
+                                            <span>Symptom Analysis</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="fas fa-shield-virus"></i>
+                                            <span>Vaccination Info</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="fas fa-chart-line"></i>
+                                            <span>Health Alerts</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="fas fa-phone-alt"></i>
+                                            <span>Emergency Support</span>
+                                        </div>
+                                    </div>
+                                    <p>How can I assist you with your health today?</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions-panel">
+                        <div class="quick-actions-header">
+                            <span>Quick Actions</span>
+                            <button class="collapse-btn" onclick="toggleQuickActions()">
+                                <i class="fas fa-chevron-up"></i>
+                            </button>
+                        </div>
+                        <div class="quick-actions" id="quickActions">
+                            <button class="quick-btn symptoms" onclick="sendQuickMessage('I have symptoms')">
+                                <i class="fas fa-thermometer-half"></i>
+                                <span>I have symptoms</span>
+                            </button>
+                            <button class="quick-btn vaccines" onclick="sendQuickMessage('Tell me about vaccinations')">
+                                <i class="fas fa-syringe"></i>
+                                <span>Vaccinations</span>
+                            </button>
+                            <button class="quick-btn alerts" onclick="sendQuickMessage('Any health alerts?')">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Health Alerts</span>
+                            </button>
+                            <button class="quick-btn emergency" onclick="sendQuickMessage('Emergency help')">
+                                <i class="fas fa-ambulance"></i>
+                                <span>Emergency</span>
+                            </button>
+                            <button class="quick-btn tips" onclick="sendQuickMessage('Health tips')">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Health Tips</span>
+                            </button>
+                            <button class="quick-btn hospitals" onclick="sendQuickMessage('Hospitals near me')">
+                                <i class="fas fa-hospital"></i>
+                                <span>Find Hospitals</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="typing-text">HealthBot is analyzing...</span>
+                        </div>
+
+                        <div class="input-container">
+                            <div class="input-wrapper">
+                                <button class="input-action" onclick="startVoiceInput()" title="Voice Input">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <input type="text" id="messageInput" placeholder="Ask me anything about your health..."
+                                       onkeypress="handleKeyPress(event)" disabled>
+                                <button class="input-action" onclick="attachFile()" title="Attach File">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button id="sendButton" onclick="sendMessage()" disabled>
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div class="input-suggestions" id="inputSuggestions">
+                                <span class="suggestion" onclick="applySuggestion('I have a fever')">I have a fever</span>
+                                <span class="suggestion" onclick="applySuggestion('COVID symptoms')">COVID symptoms</span>
+                                <span class="suggestion" onclick="applySuggestion('Vaccination schedule')">Vaccination schedule</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other tabs placeholder -->
+            <div id="symptoms-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Symptom Checker</h2>
+                    <p>Get AI-powered analysis of your symptoms</p>
+                </div>
+                <div class="coming-soon">
+                    <i class="fas fa-stethoscope"></i>
+                    <h3>Advanced Symptom Checker</h3>
+                    <p>Coming soon - Interactive symptom analysis with detailed recommendations</p>
+                </div>
+            </div>
+
+            <!-- Add other tab contents here -->
+        </main

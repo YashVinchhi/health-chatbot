@@ -1,48 +1,49 @@
 version: "3.1"
 
 stories:
-  - story: symptom inquiry flow
+  - story: greet and ask symptoms
     steps:
       - intent: greet
       - action: utter_greet
-      - intent: ask_symptom_info
-        entities:
-          - symptom: fever
-      - action: action_get_symptom_info
+      - intent: ask_symptoms
+      - action: utter_symptoms_help
+      - action: action_symptom_analysis
+
+  - story: vaccination inquiry
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: ask_vaccination
+      - action: utter_vaccination_info
+      - action: action_get_vaccination_info
+
+  - story: outbreak information
+    steps:
+      - intent: ask_outbreak_info
+      - action: utter_outbreak_info
+      - action: action_get_outbreak_info
+
+  - story: emergency help
+    steps:
+      - intent: ask_emergency
+      - action: utter_emergency
+
+  - story: general health advice
+    steps:
+      - intent: ask_general_health
+      - action: utter_general_health
+
+  - story: medication inquiry
+    steps:
+      - intent: ask_medication
+      - action: utter_medication_info
+
+  - story: bot challenge
+    steps:
+      - intent: bot_challenge
+      - action: utter_iamabot
+
+  - story: goodbye
+    steps:
       - intent: goodbye
       - action: utter_goodbye
-
-  - story: vaccination schedule check
-    steps:
-      - intent: ask_vaccine_schedule
-        entities:
-          - age: 2
-      - action: action_check_vaccine_schedule
-      - intent: goodbye
-      - action: utter_goodbye
-
-  - story: disease prevention flow
-    steps:
-      - intent: ask_prevention
-      - action: action_get_prevention_tips
-      - intent: goodbye
-      - action: utter_goodbye
-
-  - story: outbreak alert check
-    steps:
-      - intent: ask_outbreak_alerts
-        entities:
-          - location: Mumbai
-      - action: action_send_outbreak_alert
-      - intent: goodbye
-      - action: utter_goodbye
-
-  - story: interactive fallback
-    steps:
-      - intent: nlu_fallback
-      - action: utter_default
-      - action: utter_ask_rephrase
-      - intent: ask_symptom_info
-        entities:
-          - symptom: fever
-      - action: action_get_symptom_info
