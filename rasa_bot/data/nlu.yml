@@ -1,0 +1,57 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - hey
+      - hello
+      - hi
+      - hello there
+      - good morning
+      - good evening
+      - namaste
+      - नमस्ते
+      - हैलो
+
+  - intent: goodbye
+    examples: |
+      - bye
+      - goodbye
+      - see you around
+      - see you later
+      - धन्यवाद
+      - अलविदा
+
+  - intent: ask_symptom_info
+    examples: |
+      - what are the symptoms of [fever](symptom)
+      - i have [headache](symptom) for [2 days](duration)
+      - my child has [cough](symptom)
+      - [stomach pain](symptom) and [vomiting](symptom)
+      - [बुखार](symptom) के लक्षण क्या हैं
+      - मुझे [सिरदर्द](symptom) है
+
+  - intent: ask_vaccine_schedule
+    examples: |
+      - which vaccines are due for [2](age) year old
+      - vaccination schedule for [6](age) month baby
+      - next vaccine for [1](age) year child
+      - [12](age) month baby vaccines
+      - [2](age) साल के बच्चे का टीकाकरण
+      - [6](age) महीने के शिशु के टीके
+
+  - intent: ask_prevention
+    examples: |
+      - how to prevent malaria
+      - dengue prevention tips
+      - ways to avoid covid
+      - precautions for flu
+      - मलेरिया से बचाव
+      - डेंगू से कैसे बचें
+
+  - intent: ask_outbreak_alerts
+    examples: |
+      - any disease outbreak in [Mumbai](location)
+      - health alerts in [Delhi](location)
+      - current epidemic in [Pune](location)
+      - [बेंगलुरु](location) में कोई बीमारी का प्रकोप

@@ -1,0 +1,77 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - ask_symptom_info
+  - ask_prevention
+  - ask_vaccine_schedule
+  - ask_outbreak_alerts
+  - out_of_scope
+
+entities:
+  - symptom
+  - age
+  - location
+  - duration
+  - severity
+
+slots:
+  symptom:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: symptom
+  age:
+    type: float
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: age
+  location:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: location
+  duration:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: duration
+  severity:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: severity
+
+responses:
+  utter_greet:
+    - text: "Hello! I'm your health assistant. How can I help you today?"
+    - text: "Hi! I'm here to help you with health information. What would you like to know?"
+
+  utter_goodbye:
+    - text: "Goodbye! Take care of your health."
+    - text: "Stay healthy! Goodbye!"
+
+  utter_default:
+    - text: "I'm not sure I understand. Could you rephrase that?"
+    - text: "I didn't quite get that. Could you say it differently?"
+
+  utter_ask_rephrase:
+    - text: "I'm not sure I understand. Could you rephrase that?"
+
+actions:
+  - action_check_vaccine_schedule
+  - action_get_symptom_info
+  - action_send_outbreak_alert
+  - action_get_prevention_tips
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

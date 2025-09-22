@@ -1,0 +1,35 @@
+version: "3.1"
+
+stories:
+  - story: symptom inquiry flow
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: ask_symptom_info
+        entities:
+          - symptom: fever
+      - action: action_get_symptom_info
+      - intent: goodbye
+      - action: utter_goodbye
+
+  - story: vaccination schedule check
+    steps:
+      - intent: ask_vaccine_schedule
+        entities:
+          - age: 2
+      - action: action_check_vaccine_schedule
+      - intent: affirm
+      - action: utter_goodbye
+
+  - story: disease prevention flow
+    steps:
+      - intent: ask_prevention
+      - action: action_get_prevention_tips
+      - intent: affirm
+
+  - story: outbreak alert check
+    steps:
+      - intent: ask_outbreak_alerts
+        entities:
+          - location: Mumbai
+      - action: action_send_outbreak_alert
