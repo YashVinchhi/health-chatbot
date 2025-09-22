@@ -10,6 +10,7 @@ intents:
   - ask_vaccine_schedule
   - ask_outbreak_alerts
   - out_of_scope
+  - bot_challenge
 
 entities:
   - symptom
@@ -47,8 +48,8 @@ slots:
     type: text
     influence_conversation: true
     mappings:
-    - type: from_entity
-      entity: severity
+      - type: from_entity
+        entity: severity
 
 responses:
   utter_greet:
@@ -65,6 +66,9 @@ responses:
 
   utter_ask_rephrase:
     - text: "I'm not sure I understand. Could you rephrase that?"
+
+  utter_iamabot:
+    - text: "I am a health assistant bot, designed to help you with health-related questions."
 
 actions:
   - action_check_vaccine_schedule

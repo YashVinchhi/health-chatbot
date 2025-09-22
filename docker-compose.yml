@@ -2,14 +2,34 @@ version: '3.8'
 
 services:
   rasa:
-    build: ./rasa_bot
+    build: 
+      context: ./rasa_bot
+      dockerfile: Dockerfile
     ports:
       - "5005:5005"
     volumes:
       - ./rasa_bot:/app
     environment:
       - PYTHONPATH=/app
-    command: run -m http://0.0.0.0:5005
+      - RASA_ACTIONS_URL=http://rasa-actions:5055/webhook
+    command: run -m http://0.0.0.0:5005 --endpoints endpoints.yml
+    depends_on:
+      - rasa-actions
+      - db
+      - kafka
+
+  rasa-actions:
+    build:
+      context: ./rasa_bot
+      dockerfile: actions.Dockerfile
+    ports:
+      - "5055:5055"
+    volumes:
+      - ./rasa_bot/actions:/app/actions
+    environment:
+      - PYTHONPATH=/app
+      - BACKEND_URL=http://backend:8000
+    command: ["rasa", "run", "actions", "--actions", "actions"]
 
   backend:
     build: ./backend
@@ -23,7 +43,6 @@ services:
       - SMS_API_KEY=${SMS_API_KEY}
     depends_on:
       - db
-      - rasa
 
   db:
     image: postgres:13
@@ -35,6 +54,20 @@ services:
       - POSTGRES_DB=${DB_NAME}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
 
   prometheus:
     image: prom/prometheus

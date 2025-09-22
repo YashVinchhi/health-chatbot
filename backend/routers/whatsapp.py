@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from ..services import vaccination, outbreak
-from ..db import crud, models
-from ..utils import security
+from services import vaccination, outbreak
+from db import crud, models
+from utils import security
 
 router = APIRouter()
 

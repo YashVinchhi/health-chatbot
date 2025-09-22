@@ -1,0 +1,14 @@
+version: "3.1"
+
+action_endpoint:
+  url: "http://rasa-actions:5055/webhook"
+
+tracker_store:
+  type: sql
+  dialect: "postgresql"
+  url: "postgresql://postgres:postgres@postgres:5432/rasa"
+
+event_broker:
+  type: kafka
+  url: kafka:9092
+  topic: rasa_events

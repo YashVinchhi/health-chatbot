@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import whatsapp, sms, health_api
-from .db.database import engine
-from .db import models
+from routers import whatsapp, sms, health_api
+from db.database import engine
+from db import models
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)

@@ -15,3 +15,4 @@ rules:
     steps:
       - intent: out_of_scope
       - action: utter_default
+      - action: utter_ask_rephrase

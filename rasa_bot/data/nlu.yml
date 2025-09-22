@@ -22,6 +22,38 @@ nlu:
       - धन्यवाद
       - अलविदा
 
+  - intent: affirm
+    examples: |
+      - yes
+      - indeed
+      - of course
+      - that sounds good
+      - correct
+      - okay
+      - sure
+      - हाँ
+      - ठीक है
+
+  - intent: deny
+    examples: |
+      - no
+      - never
+      - I don't think so
+      - don't like that
+      - no way
+      - not really
+      - नहीं
+      - बिलकुल नहीं
+
+  - intent: bot_challenge
+    examples: |
+      - are you a bot?
+      - are you a human?
+      - am I talking to a bot?
+      - am I talking to a human?
+      - क्या आप एक बॉट हैं?
+      - क्या मैं किसी इंसान से बात कर रहा हूं?
+
   - intent: ask_symptom_info
     examples: |
       - what are the symptoms of [fever](symptom)
@@ -55,3 +87,12 @@ nlu:
       - health alerts in [Delhi](location)
       - current epidemic in [Pune](location)
       - [बेंगलुरु](location) में कोई बीमारी का प्रकोप
+
+  - intent: out_of_scope
+    examples: |
+      - I want to order food
+      - What is the weather like?
+      - I want to book a flight
+      - Play some music
+      - खाना ऑर्डर करना है
+      - मौसम कैसा है?

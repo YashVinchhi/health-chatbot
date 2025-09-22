@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from ..services import vaccination, outbreak
+from services import vaccination, outbreak
 
 router = APIRouter()
 
