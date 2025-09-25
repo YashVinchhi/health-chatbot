@@ -105,6 +105,11 @@
 
                 <div class="chat-container">
                     <div class="chat-messages" id="chatMessages">
+                        <!-- Scroll to bottom button -->
+                        <button class="scroll-to-bottom" id="scrollToBottom" onclick="scrollToBottom()" title="Scroll to bottom">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+
                         <div class="message bot-message welcome-message">
                             <div class="message-avatar">
                                 <i class="fas fa-robot"></i>
@@ -140,7 +145,7 @@
                         </div>
                     </div>
 
-                    <div class="quick-actions-panel">
+                    <!-- <div class="quick-actions-panel">
                         <div class="quick-actions-header">
                             <span>Quick Actions</span>
                             <button class="collapse-btn" onclick="toggleQuickActions()">
@@ -148,32 +153,32 @@
                             </button>
                         </div>
                         <div class="quick-actions" id="quickActions">
-                            <button class="quick-btn symptoms" onclick="sendQuickMessage('I have symptoms')">
+                            <button class="quick-btn symptoms" onclick="window.chatbot.handleQuickAction('symptoms')">
                                 <i class="fas fa-thermometer-half"></i>
                                 <span>I have symptoms</span>
                             </button>
-                            <button class="quick-btn vaccines" onclick="sendQuickMessage('Tell me about vaccinations')">
+                            <button class="quick-btn vaccines" onclick="window.chatbot.handleQuickAction('vaccines')">
                                 <i class="fas fa-syringe"></i>
                                 <span>Vaccinations</span>
                             </button>
-                            <button class="quick-btn alerts" onclick="sendQuickMessage('Any health alerts?')">
+                            <button class="quick-btn alerts" onclick="window.chatbot.handleQuickAction('alerts')">
                                 <i class="fas fa-exclamation-triangle"></i>
                                 <span>Health Alerts</span>
                             </button>
-                            <button class="quick-btn emergency" onclick="sendQuickMessage('Emergency help')">
+                            <button class="quick-btn emergency" onclick="window.chatbot.handleQuickAction('emergency')">
                                 <i class="fas fa-ambulance"></i>
                                 <span>Emergency</span>
                             </button>
-                            <button class="quick-btn tips" onclick="sendQuickMessage('Health tips')">
+                            <button class="quick-btn tips" onclick="window.chatbot.handleQuickAction('tips')">
                                 <i class="fas fa-lightbulb"></i>
                                 <span>Health Tips</span>
                             </button>
-                            <button class="quick-btn hospitals" onclick="sendQuickMessage('Hospitals near me')">
+                            <button class="quick-btn hospitals" onclick="window.chatbot.handleQuickAction('hospitals')">
                                 <i class="fas fa-hospital"></i>
                                 <span>Find Hospitals</span>
                             </button>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="chat-input-area">
                         <div class="typing-indicator" id="typingIndicator" style="display: none;">
@@ -222,5 +227,375 @@
                 </div>
             </div>
 
-            <!-- Add other tab contents here -->
-        </main
+            <div id="vaccines-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-syringe"></i> Vaccination Information</h2>
+                    <p>Stay up-to-date with your vaccinations</p>
+                </div>
+                <div class="vaccines-content">
+                    <div class="vaccine-cards">
+                        <div class="vaccine-card">
+                            <div class="vaccine-icon">
+                                <i class="fas fa-shield-virus"></i>
+                            </div>
+                            <h3>COVID-19</h3>
+                            <p>Get the latest information about COVID-19 vaccinations</p>
+                            <button class="vaccine-btn" onclick="sendQuickMessage('COVID-19 vaccination information')">
+                                Learn More
+                            </button>
+                        </div>
+                        <div class="vaccine-card">
+                            <div class="vaccine-icon">
+                                <i class="fas fa-lungs"></i>
+                            </div>
+                            <h3>Flu Shot</h3>
+                            <p>Annual influenza vaccination recommendations</p>
+                            <button class="vaccine-btn" onclick="sendQuickMessage('Flu vaccination schedule')">
+                                Learn More
+                            </button>
+                        </div>
+                        <div class="vaccine-card">
+                            <div class="vaccine-icon">
+                                <i class="fas fa-baby"></i>
+                            </div>
+                            <h3>Childhood</h3>
+                            <p>Essential vaccinations for children</p>
+                            <button class="vaccine-btn" onclick="sendQuickMessage('Childhood vaccination schedule')">
+                                Learn More
+                            </button>
+                        </div>
+                        <div class="vaccine-card">
+                            <div class="vaccine-icon">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <h3>Travel</h3>
+                            <p>Vaccinations required for international travel</p>
+                            <button class="vaccine-btn" onclick="sendQuickMessage('Travel vaccination requirements')">
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emergency-tab" class="tab-content">
+                <div class="tab-header emergency-header">
+                    <h2><i class="fas fa-ambulance"></i> Emergency Services</h2>
+                    <p class="emergency-subtitle">🚨 For life-threatening emergencies, call 108 immediately</p>
+                </div>
+                <div class="emergency-content">
+                    <div class="emergency-cards">
+                        <div class="emergency-card critical">
+                            <div class="emergency-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <h3>Emergency Hotlines</h3>
+                            <div class="hotline-list">
+                                <div class="hotline-item">
+                                    <strong>911</strong> - Emergency Services
+                                </div>
+                                <div class="hotline-item">
+                                    <strong>1-800-222-1222</strong> - Poison Control
+                                </div>
+                                <div class="hotline-item">
+                                    <strong>988</strong> - Suicide & Crisis Lifeline
+                                </div>
+                            </div>
+                        </div>
+                        <div class="emergency-card">
+                            <div class="emergency-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <h3>First Aid</h3>
+                            <p>Basic first aid guidance for common emergencies</p>
+                            <button class="emergency-btn" onclick="sendQuickMessage('First aid instructions')">
+                                Get Instructions
+                            </button>
+                        </div>
+                        <div class="emergency-card">
+                            <div class="emergency-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <h3>Nearest Hospital</h3>
+                            <p>Find the closest emergency room</p>
+                            <button class="emergency-btn" onclick="findNearestHospital()">
+                                Find Now
+                            </button>
+                        </div>
+                        <div class="emergency-card">
+                            <div class="emergency-icon">
+                                <i class="fas fa-pills"></i>
+                            </div>
+                            <h3>Poisoning</h3>
+                            <p>What to do in case of poisoning</p>
+                            <button class="emergency-btn" onclick="sendQuickMessage('Poisoning emergency help')">
+                                Get Help
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="alerts-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Health Alerts</h2>
+                    <p>Current health advisories and alerts</p>
+                </div>
+                <div class="alerts-content">
+                    <div class="alert-item high-priority">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <h3>Flu Season Alert</h3>
+                            <p>Flu activity is elevated in your area. Consider getting vaccinated if you haven't already.</p>
+                            <span class="alert-time">Updated 2 hours ago</span>
+                        </div>
+                    </div>
+                    <div class="alert-item medium-priority">
+                        <div class="alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <h3>Air Quality Advisory</h3>
+                            <p>Moderate air quality today. Sensitive individuals should limit outdoor activities.</p>
+                            <span class="alert-time">Updated 4 hours ago</span>
+                        </div>
+                    </div>
+                    <div class="alert-item low-priority">
+                        <div class="alert-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <h3>Health Reminder</h3>
+                            <p>Don't forget to stay hydrated and get adequate sleep for optimal health.</p>
+                            <span class="alert-time">Updated 1 day ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hospitals-tab" class="tab-content">
+                <div class="tab-header">
+                    <h2><i class="fas fa-hospital"></i> Nearby Hospitals</h2>
+                    <p>Find healthcare facilities in your area</p>
+                </div>
+                <div class="hospitals-content">
+                    <div class="search-hospital">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="locationInput" placeholder="Enter your location or zip code...">
+                            <button class="search-btn" onclick="searchHospitals()">
+                                <i class="fas fa-search"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hospital-list" id="hospitalList">
+                        <div class="hospital-card">
+                            <div class="hospital-info">
+                                <h3>General Hospital</h3>
+                                <p><i class="fas fa-map-marker-alt"></i> 123 Main St, City, State 12345</p>
+                                <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                                <div class="hospital-services">
+                                    <span class="service-tag">Emergency</span>
+                                    <span class="service-tag">Surgery</span>
+                                    <span class="service-tag">Pediatrics</span>
+                                </div>
+                            </div>
+                            <div class="hospital-actions">
+                                <button class="hospital-btn primary" onclick="getDirections('General Hospital')">
+                                    <i class="fas fa-directions"></i>
+                                    Directions
+                                </button>
+                                <button class="hospital-btn secondary" onclick="callHospital('(555) 123-4567')">
+                                    <i class="fas fa-phone"></i>
+                                    Call
+                                </button>
+                            </div>
+                        </div>
+                        <div class="hospital-card">
+                            <div class="hospital-info">
+                                <h3>St. Mary's Medical Center</h3>
+                                <p><i class="fas fa-map-marker-alt"></i> 456 Oak Ave, City, State 12345</p>
+                                <p><i class="fas fa-phone"></i> (555) 987-6543</p>
+                                <div class="hospital-services">
+                                    <span class="service-tag">Emergency</span>
+                                    <span class="service-tag">Cardiology</span>
+                                    <span class="service-tag">Maternity</span>
+                                </div>
+                            </div>
+                            <div class="hospital-actions">
+                                <button class="hospital-btn primary" onclick="getDirections('St. Mary\'s Medical Center')">
+                                    <i class="fas fa-directions"></i>
+                                    Directions
+                                </button>
+                                <button class="hospital-btn secondary" onclick="callHospital('(555) 987-6543')">
+                                    <i class="fas fa-phone"></i>
+                                    Call
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Settings</h3>
+                <button class="close-btn" onclick="toggleSettings()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>Theme</label>
+                    <div class="theme-options">
+                        <button class="theme-btn" data-theme="light">Light</button>
+                        <button class="theme-btn" data-theme="dark">Dark</button>
+                        <button class="theme-btn" data-theme="auto">Auto</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Language</label>
+                    <select class="setting-select" id="languageSelect">
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="fr">Français</option>
+                        <option value="de">Deutsch</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Voice Input</label>
+                    <select class="setting-select" id="voiceSelect">
+                        <option value="enabled">Enabled</option>
+                        <option value="disabled">Disabled</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Chat History</label>
+                    <button class="action-btn" onclick="exportChat()" style="width: 100%; margin-bottom: 10px;">
+                        <i class="fas fa-download"></i> Export Chat History
+                    </button>
+                    <button class="action-btn" onclick="clearChat()" style="width: 100%; background: var(--danger-color);">
+                        <i class="fas fa-trash"></i> Clear All Messages
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health Disclaimer
+    <div class="disclaimer">
+        <div class="disclaimer-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Medical Disclaimer:</strong> This AI assistant provides general health information only.
+                Always consult healthcare professionals for medical advice. In emergencies, call 911 immediately.
+            </div>
+        </div>
+    </div> -->
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <h2>HealthBot AI</h2>
+            <div class="loading-spinner"></div>
+            <p>Initializing your health assistant...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
+    <!-- Additional JavaScript for new functionality -->
+    <script>
+        // Additional functions for new features
+        function findNearestHospital() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        sendQuickMessage(`Find hospitals near my location: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+                    },
+                    function(error) {
+                        sendQuickMessage('Find nearest hospital to my area');
+                    }
+                );
+            } else {
+                sendQuickMessage('Find nearest hospital to my area');
+            }
+        }
+
+        function searchHospitals() {
+            const location = document.getElementById('locationInput').value;
+            if (location.trim()) {
+                sendQuickMessage(`Find hospitals near ${location}`);
+            } else {
+                alert('Please enter a location to search for hospitals');
+            }
+        }
+
+        function getDirections(hospitalName) {
+            const message = `Get directions to ${hospitalName}`;
+            sendQuickMessage(message);
+        }
+
+        function callHospital(phoneNumber) {
+            if (confirm(`Call ${phoneNumber}?`)) {
+                window.open(`tel:${phoneNumber}`);
+            }
+        }
+
+        // Hide loading screen when page is fully loaded
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 500);
+                }
+            }, 1500);
+        });
+
+        // Enhanced tab functionality
+        function setActiveTab(tabName) {
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Add active class to clicked nav item
+            const clickedItem = document.querySelector(`[onclick*="setActiveTab('${tabName}')"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab content
+            const selectedTab = document.getElementById(`${tabName}-tab`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+
+            // Update current tab if chatbot exists
+            if (window.chatbot) {
+                window.chatbot.currentTab = tabName;
+            }
+        }
+    </script>
+</body>
+</html>

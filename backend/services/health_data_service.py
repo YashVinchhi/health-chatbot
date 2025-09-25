@@ -1,7 +1,7 @@
 import httpx
 import logging
 from typing import Dict, List, Optional, Any
-from config import settings
+from ..config import settings
 import asyncio
 from datetime import datetime
 
@@ -48,66 +48,89 @@ class HealthDataService:
                 response = await self.client.get(url, headers=headers)
                 if response.status_code == 200:
                     return {"success": True, "data": response.json()}
-
-            # Fallback to curated vaccination data
-            schedules = {
-                "adult": [
-                    {
-                        "vaccine": "COVID-19",
-                        "schedule": "Primary series + annual boosters",
-                        "priority": "High",
-                        "notes": "Recommended for all adults"
-                    },
-                    {
-                        "vaccine": "Influenza (Flu)",
-                        "schedule": "Annual vaccination",
-                        "priority": "High",
-                        "notes": "Recommended every fall season"
-                    },
-                    {
-                        "vaccine": "Tdap (Tetanus, Diphtheria, Pertussis)",
-                        "schedule": "Every 10 years",
-                        "priority": "Medium",
-                        "notes": "Booster for adult protection"
-                    }
-                ],
-                "child": [
-                    {
-                        "vaccine": "MMR (Measles, Mumps, Rubella)",
-                        "schedule": "12-15 months, 4-6 years",
-                        "priority": "High",
-                        "notes": "Part of routine childhood immunization"
-                    },
-                    {
-                        "vaccine": "DTaP (Diphtheria, Tetanus, Pertussis)",
-                        "schedule": "2, 4, 6, 15-18 months, 4-6 years",
-                        "priority": "High",
-                        "notes": "Essential childhood protection"
-                    }
-                ]
-            }
-
-            return {
-                "success": True,
-                "data": schedules.get(age_group, schedules["adult"])
-            }
-
         except Exception as e:
-            logger.error(f"Error fetching vaccination schedule: {e}")
-            return {"success": False, "error": "Unable to fetch vaccination data"}
+            logger.error(f"Error fetching vaccination data from CDC: {e}")
 
-    async def get_health_news(self, query: str = "health alert") -> Dict[str, Any]:
-        """Get health-related news from NewsAPI"""
+        # Fallback curated vaccination data
+        vaccination_data = {
+            "adult": [
+                {
+                    "vaccine": "COVID-19",
+                    "schedule": "Initial series + annual boosters",
+                    "importance": "High priority for all adults"
+                },
+                {
+                    "vaccine": "Influenza (Flu)",
+                    "schedule": "Annual vaccination",
+                    "importance": "Recommended for everyone 6 months and older"
+                },
+                {
+                    "vaccine": "Tdap (Tetanus, Diphtheria, Pertussis)",
+                    "schedule": "Every 10 years",
+                    "importance": "Essential for wound protection"
+                }
+            ],
+            "child": [
+                {
+                    "vaccine": "MMR (Measles, Mumps, Rubella)",
+                    "schedule": "12-15 months, 4-6 years",
+                    "importance": "Critical for school entry"
+                },
+                {
+                    "vaccine": "DTaP (Diphtheria, Tetanus, Pertussis)",
+                    "schedule": "2, 4, 6, 15-18 months, 4-6 years",
+                    "importance": "Essential childhood protection"
+                }
+            ]
+        }
+
+        return {
+            "success": True,
+            "data": vaccination_data.get(age_group, vaccination_data["adult"])
+        }
+
+    async def get_drug_information(self, drug_name: str) -> Dict[str, Any]:
+        """Get drug information from FDA OpenFDA API"""
+        try:
+            url = f"{settings.fda_base_url}/drug/label.json"
+            params = {
+                "search": f"openfda.generic_name:{drug_name.lower()}"
+            }
+
+            response = await self.client.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                results = data.get("results", [])
+                if results:
+                    drug_info = results[0]
+                    return {
+                        "success": True,
+                        "data": {
+                            "drug_name": drug_name,
+                            "generic_name": drug_info.get("openfda", {}).get("generic_name", ["Unknown"])[0],
+                            "brand_name": drug_info.get("openfda", {}).get("brand_name", ["Unknown"])[0],
+                            "purpose": drug_info.get("purpose", ["Information not available"])[0] if drug_info.get("purpose") else "Information not available",
+                            "warnings": drug_info.get("warnings", ["Please consult healthcare provider"])[0] if drug_info.get("warnings") else "Please consult healthcare provider",
+                            "dosage": drug_info.get("dosage_and_administration", ["Consult healthcare provider"])[0] if drug_info.get("dosage_and_administration") else "Consult healthcare provider"
+                        }
+                    }
+        except Exception as e:
+            logger.error(f"Error fetching drug information: {e}")
+
+        return {"success": False, "error": f"Unable to find information for {drug_name}"}
+
+    async def get_health_news(self, query: str = "health") -> Dict[str, Any]:
+        """Get health news from NewsAPI"""
         try:
             if not settings.news_api_key:
-                return self._get_mock_health_news()
+                return self._get_fallback_health_news()
 
             url = "https://newsapi.org/v2/everything"
             params = {
                 "q": query,
                 "apiKey": settings.news_api_key,
-                "sortBy": "publishedAt",
                 "language": "en",
+                "sortBy": "publishedAt",
                 "pageSize": 5
             }
 
@@ -115,85 +138,46 @@ class HealthDataService:
             if response.status_code == 200:
                 data = response.json()
                 articles = []
-                for article in data.get("articles", [])[:3]:
+                for article in data.get("articles", [])[:5]:
                     articles.append({
-                        "title": article.get("title"),
-                        "description": article.get("description"),
-                        "url": article.get("url"),
-                        "published": article.get("publishedAt"),
-                        "source": article.get("source", {}).get("name")
+                        "title": article.get("title", "No title"),
+                        "description": article.get("description", "No description"),
+                        "url": article.get("url", ""),
+                        "published_at": article.get("publishedAt", ""),
+                        "source": article.get("source", {}).get("name", "Unknown")
                     })
-
                 return {"success": True, "data": articles}
-
         except Exception as e:
             logger.error(f"Error fetching health news: {e}")
 
-        return self._get_mock_health_news()
+        return self._get_fallback_health_news()
 
-    def _get_mock_health_news(self) -> Dict[str, Any]:
+    def _get_fallback_health_news(self) -> Dict[str, Any]:
         """Fallback health news when API is not available"""
-        return {
-            "success": True,
-            "data": [
-                {
-                    "title": "CDC Updates Vaccination Guidelines",
-                    "description": "Latest recommendations for COVID-19 and flu vaccinations",
-                    "source": "CDC",
-                    "published": datetime.now().isoformat()
-                },
-                {
-                    "title": "Seasonal Health Advisory",
-                    "description": "Preparing for flu season - prevention tips",
-                    "source": "WHO",
-                    "published": datetime.now().isoformat()
-                }
-            ]
-        }
-
-    async def get_drug_information(self, drug_name: str) -> Dict[str, Any]:
-        """Get drug information from FDA API"""
-        try:
-            # FDA OpenFDA API - free to use
-            url = f"{settings.fda_base_url}/drug/label.json"
-            params = {
-                "search": f"openfda.brand_name:{drug_name}",
-                "limit": 1
+        fallback_news = [
+            {
+                "title": "WHO Updates Global Health Guidelines",
+                "description": "World Health Organization releases new guidelines for preventive healthcare",
+                "url": "https://who.int",
+                "published_at": datetime.now().isoformat(),
+                "source": "WHO"
+            },
+            {
+                "title": "Seasonal Flu Vaccination Campaign",
+                "description": "Health authorities recommend annual flu vaccination for all eligible individuals",
+                "url": "https://cdc.gov",
+                "published_at": datetime.now().isoformat(),
+                "source": "CDC"
             }
+        ]
+        return {"success": True, "data": fallback_news}
 
-            if settings.fda_api_key:
-                params["api_key"] = settings.fda_api_key
-
-            response = await self.client.get(url, params=params)
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("results"):
-                    result = data["results"][0]
-                    return {
-                        "success": True,
-                        "data": {
-                            "brand_name": result.get("openfda", {}).get("brand_name", ["Unknown"])[0],
-                            "generic_name": result.get("openfda", {}).get("generic_name", ["Unknown"])[0],
-                            "purpose": result.get("purpose", ["Information not available"])[0] if result.get("purpose") else "Information not available",
-                            "warnings": result.get("warnings", ["Please consult healthcare provider"])[0] if result.get("warnings") else "Please consult healthcare provider"
-                        }
-                    }
-
-        except Exception as e:
-            logger.error(f"Error fetching drug information: {e}")
-
-        return {
-            "success": False,
-            "error": "Unable to fetch drug information. Please consult a healthcare professional."
-        }
-
-    async def get_weather_health_advisory(self, location: str = "global") -> Dict[str, Any]:
-        """Get weather-related health advisories"""
+    async def get_weather_health_advisory(self, location: str) -> Dict[str, Any]:
+        """Get weather-based health advisory"""
         try:
             if not settings.openweather_api_key:
-                return self._get_mock_weather_advisory()
+                return self._get_general_weather_advisory()
 
-            # Get current weather data
             url = "http://api.openweathermap.org/data/2.5/weather"
             params = {
                 "q": location,
@@ -207,8 +191,7 @@ class HealthDataService:
                 temp = data["main"]["temp"]
                 humidity = data["main"]["humidity"]
 
-                # Generate health advisory based on weather
-                advisory = self._generate_weather_health_advisory(temp, humidity)
+                advisory = self._generate_health_advisory(temp, humidity)
 
                 return {
                     "success": True,
@@ -219,38 +202,37 @@ class HealthDataService:
                         "advisory": advisory
                     }
                 }
-
         except Exception as e:
-            logger.error(f"Error fetching weather advisory: {e}")
+            logger.error(f"Error fetching weather data: {e}")
 
-        return self._get_mock_weather_advisory()
+        return self._get_general_weather_advisory()
 
-    def _generate_weather_health_advisory(self, temp: float, humidity: float) -> List[str]:
+    def _generate_health_advisory(self, temp: float, humidity: float) -> List[str]:
         """Generate health advisory based on weather conditions"""
         advisories = []
 
-        if temp > 30:
+        if temp > 35:
             advisories.append("🌡️ High temperature - Stay hydrated and avoid prolonged sun exposure")
         elif temp < 5:
-            advisories.append("🧊 Cold weather - Dress warmly and watch for hypothermia symptoms")
+            advisories.append("🧊 Low temperature - Dress warmly and protect against hypothermia")
 
         if humidity > 80:
-            advisories.append("💧 High humidity - Take breaks in air-conditioned spaces")
+            advisories.append("💧 High humidity - Be aware of heat index and potential for mold growth")
         elif humidity < 30:
-            advisories.append("🏜️ Low humidity - Use moisturizers and stay hydrated")
+            advisories.append("🏜️ Low humidity - Use moisturizer and stay hydrated")
 
         if not advisories:
-            advisories.append("☀️ Pleasant weather conditions - Great for outdoor activities")
+            advisories.append("☀️ Pleasant weather conditions - Good for outdoor activities")
 
         return advisories
 
-    def _get_mock_weather_advisory(self) -> Dict[str, Any]:
+    def _get_general_weather_advisory(self) -> Dict[str, Any]:
         """Fallback weather advisory"""
         return {
             "success": True,
             "data": {
                 "location": "General",
-                "advisory": ["Stay hydrated and dress appropriately for the weather"]
+                "advisory": ["Stay hydrated", "Dress appropriately for weather", "Protect yourself from extreme conditions"]
             }
         }
 

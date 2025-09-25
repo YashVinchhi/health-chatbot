@@ -8,6 +8,9 @@ WORKDIR /app
 COPY actions/requirements.txt ./
 RUN pip install -r requirements.txt
 
+# Ensure SQLAlchemy is pinned to <2.0 to avoid SQLAlchemy 2.0 deprecation/compat warnings
+RUN pip install "sqlalchemy<2.0"
+
 # Copy actions directory contents but preserve the entrypoint.sh
 COPY actions/actions.py ./actions.py
 

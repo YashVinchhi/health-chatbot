@@ -10,41 +10,151 @@ intents:
   - ask_general_health
   - ask_medication
   - bot_challenge
+  - ask_hospitals
+  - ask_location
+  - ask_cost
+  - affirm
+  - deny
+  - ask_prevention
+  - ask_exercise
+  - ask_diet
+  - ask_mental_health
+
+entities:
+  - symptom
+  - location
+  - age
+  - gender
+  - severity
+  - duration
+  - vaccine_type
+  - disease
+
+slots:
+  user_name:
+    type: text
+    mappings:
+    - type: from_text
+      conditions:
+      - active_loop: name_form
+        requested_slot: user_name
+
+  location:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: location
+
+  age:
+    type: float
+    mappings:
+    - type: from_entity
+      entity: age
+
+  symptom:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: symptom
+
+  severity:
+    type: categorical
+    values:
+    - mild
+    - moderate
+    - severe
+    mappings:
+    - type: from_entity
+      entity: severity
 
 responses:
   utter_greet:
-  - text: "Hello! I'm your health assistant. How can I help you today?"
-  - text: "Hi there! I'm here to help with your health questions. What would you like to know?"
+  - text: "🏥 Namaste! I'm your AI health assistant. How can I help you today?"
+  - text: "Hello! 🩺 I'm here to provide health guidance. What would you like to know?"
+  - text: "Hi there! 👋 Your health companion is ready to assist. How may I help?"
 
   utter_goodbye:
-  - text: "Goodbye! Take care of your health. Feel free to ask if you need help again."
-  - text: "Bye! Stay healthy and don't hesitate to reach out if you have health concerns."
+  - text: "Stay healthy! 🌟 Feel free to return anytime for health guidance."
+  - text: "Take care of yourself! 💚 Don't hesitate to ask if you need health advice."
+  - text: "Goodbye! Remember - your health is your wealth. 🏥"
 
   utter_symptoms_help:
-  - text: "I understand you're experiencing symptoms. Can you describe them in more detail? For serious symptoms like chest pain, difficulty breathing, or severe pain, please seek immediate medical attention."
+  - text: "I understand you're experiencing symptoms. Let me help you understand them better. Can you tell me:\n\n• What specific symptoms are you having?\n• How long have you had them?\n• How severe are they (mild/moderate/severe)?\n\n⚠️ **Important**: For severe symptoms or emergencies, please seek immediate medical attention or call emergency services."
+
+  utter_ask_symptom_details:
+  - text: "Can you describe your symptoms in more detail? For example:\n• Fever, headache, cough, nausea\n• Body pain, difficulty breathing\n• Skin issues, digestive problems"
+
+  utter_ask_severity:
+  - text: "How would you rate the severity of your symptoms?\n• **Mild**: Manageable, doesn't interfere much with daily activities\n• **Moderate**: Noticeable discomfort, some impact on activities\n• **Severe**: Significant pain/discomfort, major impact on daily life"
+
+  utter_ask_duration:
+  - text: "How long have you been experiencing these symptoms?\n• A few hours\n• 1-2 days\n• Several days\n• A week or more"
 
   utter_vaccination_info:
-  - text: "I can help with vaccination information. Are you looking for general vaccine schedules, COVID-19 vaccines, or specific vaccines for travel/age groups?"
+  - text: "💉 **Vaccination Information for India:**\n\n🦠 **COVID-19**: Free vaccines available at government centers\n• Register on CoWIN portal: https://www.cowin.gov.in/\n• Helpline: 1075\n\n🤧 **Influenza**: Available at private hospitals\n👶 **Childhood**: Free under Mission Indradhanush\n🌍 **Travel**: Consult travel medicine clinics\n\nWhat specific vaccine information do you need?"
+
+  utter_vaccination_covid:
+  - text: "🦠 **COVID-19 Vaccination in India:**\n\n📱 **How to book**: CoWIN portal or Aarogya Setu app\n💉 **Available vaccines**: Covishield, Covaxin, Sputnik V\n🏥 **Where**: Government hospitals, PHCs, private centers\n💰 **Cost**: Free at government centers\n📞 **Helpline**: 1075\n\n**Booster doses** are recommended for adults 60+ and healthcare workers."
 
   utter_outbreak_info:
-  - text: "I can provide information about current health alerts and disease outbreaks. Would you like information about your local area or a specific disease?"
+  - text: "🦠 **Current Health Alerts for India:**\n\n• **COVID-19**: {covid_status}\n• **Dengue**: Monsoon season - use mosquito protection\n• **Malaria**: Endemic areas - use bed nets\n• **Chikungunya**: Prevent water stagnation\n\n📱 For real-time updates:\n• MoHFW website: https://www.mohfw.gov.in/\n• Aarogya Setu app\n• Local health department\n\nWhich specific disease information do you need?"
 
   utter_emergency:
-  - text: "🚨 For medical emergencies, please call emergency services immediately (911 in US, 108 in India). If this is urgent but not life-threatening, contact your healthcare provider or visit the nearest emergency room."
+  - text: "🚨 **भारतीय आपातकालीन सेवाएं / Indian Emergency Services:**\n\n• **मेडिकल इमरजेंसी / Medical Emergency**: 102\n• **एम्बुलेंस / Ambulance**: 108\n• **पुलिस / Police**: 100\n• **फायर / Fire**: 101\n• **COVID हेल्पलाइन / COVID Helpline**: 1075\n• **महिला हेल्पलाइन / Women Helpline**: 1091\n• **चाइल्ड हेल्पलाइन / Child Helpline**: 1098\n\n🏥 **तुरंत चिकित्सा सहायता के लिए 102 या 108 डायल करें!**\n**For immediate medical help, dial 102 or 108!**"
+
+  utter_emergency_symptoms:
+  - text: "🚨 **Seek immediate medical attention if you have:**\n\n• Chest pain or pressure\n• Difficulty breathing or shortness of breath\n• Severe headache with neck stiffness\n• High fever above 103°F (39.4°C)\n• Persistent vomiting\n• Signs of stroke (face drooping, arm weakness, speech difficulty)\n• Severe allergic reactions\n• Uncontrolled bleeding\n\n**डायल करें / Call: 102 (Medical Emergency) or 108 (Ambulance)**"
 
   utter_general_health:
-  - text: "Here are some general health tips: maintain a balanced diet, exercise regularly, get adequate sleep (7-9 hours), stay hydrated, wash hands frequently, and have regular health checkups."
+  - text: "🌟 **Health Tips for Indians:**\n\n🍛 **Nutrition**: Include dal, sabzi, roti, rice in balanced portions\n🚶 **Exercise**: 30 minutes daily - yoga, walking, or sports\n💧 **Hydration**: 8-10 glasses of water, especially in summer\n😴 **Sleep**: 7-8 hours, avoid late-night screen time\n🧘 **Mental Health**: Practice meditation, pranayama\n🧼 **Hygiene**: Wash hands frequently, especially before meals\n\nWhat specific health topic interests you?"
+
+  utter_general_health_detailed:
+  - text: "🏃 **Detailed Health Guidelines:**\n\n**Daily Routine:**\n• Wake up early (5:30-6:30 AM)\n• Drink warm water with lemon\n• 15-20 minutes morning exercise\n• Balanced breakfast by 8 AM\n\n**Diet Guidelines:**\n• Include seasonal fruits and vegetables\n• Limit processed foods and sugar\n• Use traditional cooking methods\n• Eat dinner by 8 PM\n\n**Preventive Care:**\n• Regular health checkups\n• Blood pressure monitoring\n• Diabetes screening (especially 40+)\n• Eye and dental checkups"
 
   utter_medication_info:
-  - text: "⚠️ I cannot provide specific medication advice. Please consult with a healthcare professional or pharmacist for medication recommendations, dosages, and potential interactions."
+  - text: "💊 **Medication Safety Guidelines:**\n\n⚠️ **Important**: I cannot prescribe medications. Always consult:\n• Qualified doctors (MBBS/MD)\n• Licensed pharmacists\n• Government healthcare centers\n\n**General Medication Tips:**\n• Take medicines as prescribed\n• Complete antibiotic courses\n• Store in cool, dry places\n• Check expiry dates\n• Don't share prescription medicines\n\n**For affordable medicines**: Jan Aushadhi stores across India"
+
+  utter_ask_hospitals:
+  - text: "🏥 **Finding Healthcare in India:**\n\n**Government Hospitals:**\n• AIIMS (Delhi, and other cities)\n• State government hospitals\n• Community Health Centers (CHCs)\n• Primary Health Centers (PHCs)\n\n**Private Hospitals:**\n• Apollo, Fortis, Max, Manipal\n• Local nursing homes\n\n**Emergency Services:**\n• Dial 102/108 for ambulance\n• Most hospitals have 24x7 emergency\n\nWhich city are you looking for hospitals in?"
+
+  utter_ask_location:
+  - text: "To provide location-specific health information, could you tell me:\n• Your city or state?\n• Or would you like general information for India?\n\nThis helps me give you relevant healthcare facility information."
+
+  utter_cost_info:
+  - text: "💰 **Healthcare Costs in India:**\n\n**Government Healthcare:**\n• PHCs/CHCs: Free or nominal charges (₹5-50)\n• Government hospitals: Subsidized rates\n• Ayushman Bharat: Up to ₹5 lakh coverage\n\n**Private Healthcare:**\n• Consultation: ₹300-2,000\n• Basic tests: ₹100-1,000\n• Emergency: ₹5,000-50,000+\n\n**Insurance Options:**\n• Ayushman Bharat (for eligible families)\n• Private health insurance\n• Employee State Insurance (ESI)"
+
+  utter_prevention_tips:
+  - text: "🛡️ **Disease Prevention Tips:**\n\n**Infectious Diseases:**\n• Wash hands with soap regularly\n• Use mosquito nets (malaria/dengue)\n• Drink clean, boiled water\n• Get vaccinated as per schedule\n\n**Lifestyle Diseases:**\n• Maintain healthy weight\n• Regular exercise (150 min/week)\n• Limit salt, sugar, oil\n• No smoking, limit alcohol\n• Manage stress\n\n**Seasonal Care:**\n• Monsoon: Avoid street food, waterlogging\n• Summer: Stay hydrated, avoid heat\n• Winter: Warm clothes, vitamin D"
+
+  utter_mental_health:
+  - text: "🧠 **Mental Health Support in India:**\n\n**Free Helplines:**\n• AASRA: 9152987821\n• Vandrevala Foundation: 1860 2662 345\n• iCall: 9152987821\n\n**Warning Signs:**\n• Persistent sadness or anxiety\n• Sleep disturbances\n• Loss of interest in activities\n• Difficulty concentrating\n\n**Self-Care:**\n• Practice meditation/yoga\n• Talk to family/friends\n• Regular exercise\n• Maintain routine\n\n**Professional Help:**\n• Psychiatrists at government hospitals\n• NIMHANS (Bangalore) - national institute\n• Private counselors and therapists"
 
   utter_iamabot:
-  - text: "I am a health assistant bot designed to provide general health information and guidance. For specific medical advice, please consult with healthcare professionals."
+  - text: "I'm HealthBot AI, your intelligent health assistant! 🤖\n\nI can help with:\n• General health information\n• Symptom guidance (not diagnosis)\n• Vaccination schedules\n• Emergency contacts\n• Health tips and prevention\n\n⚠️ **Important**: I provide information only. For medical diagnosis and treatment, always consult qualified healthcare professionals."
+
+  utter_ask_name:
+  - text: "What's your name? I'd like to personalize our conversation! 😊"
+
+  utter_greet_with_name:
+  - text: "Hello {user_name}! Nice to meet you. How can I help with your health today?"
+
+  utter_default:
+  - text: "I understand you have a health question. Could you please be more specific? For example:\n• 'I have fever'\n• 'Tell me about vaccines'\n• 'I need emergency help'\n• 'Give me health tips'\n\nFor medical emergencies, please call 102 or 108 immediately."
 
 actions:
   - action_get_vaccination_info
   - action_get_outbreak_info
   - action_symptom_analysis
+  - action_find_hospitals
+  - action_get_emergency_contacts
+  - action_provide_health_tips
+  - action_check_medicine_info
+  - validate_name_form
+
+forms:
+  name_form:
+    required_slots:
+      - user_name
 
 session_config:
   session_expiration_time: 60

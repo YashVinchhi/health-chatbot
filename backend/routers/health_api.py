@@ -4,11 +4,13 @@ import logging
 from typing import Dict, Any, List, Optional
 import re
 import json
+import uuid
 
-# Add new imports for external APIs
-from services.health_data_service import health_data_service
-from services.india_health_service import india_health_service
-from config import settings
+# Add new imports for external APIs (converted to relative imports)
+from ..services.health_data_service import health_data_service
+from ..services.india_health_service import india_health_service
+from ..services.rasa_service import rasa_service
+from ..config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +19,17 @@ router = APIRouter()
 class ChatMessage(BaseModel):
     message: str
     sender: str = "user"
+    session_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
     intent: Optional[str] = None  # Allow None values
     confidence: Optional[float] = None  # Allow None values
+    sender: str = "bot"
+    timestamp: str
+    buttons: Optional[List[Dict[str, Any]]] = []
+    quick_replies: Optional[List[str]] = []
+    source: str = "rasa"
 
 # Improved NLP patterns for better intent detection
 INTENT_PATTERNS = {
@@ -210,32 +218,40 @@ def get_response_for_intent(intent: str) -> str:
         return "I understand you have a health question. Could you please provide more details? For specific medical concerns, I recommend consulting with a healthcare professional."
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_with_bot(chat_message: ChatMessage):
+async def chat_with_rasa(chat_message: ChatMessage):
     """
-    Process chat message and return response using improved NLP
+    Enhanced chat endpoint using RASA for intelligent responses
     """
     try:
-        # Detect intent
-        intent, confidence = detect_intent(chat_message.message)
+        # Generate session ID if not provided
+        session_id = chat_message.session_id or str(uuid.uuid4())
 
-        # Get response
-        if intent == 'unknown':
-            response_text = "I want to help with your health question, but I'm not sure what you're asking about. Could you please rephrase or be more specific? For urgent medical concerns, please contact a healthcare professional."
-        else:
-            response_text = get_response_for_intent(intent)
-
-        # Log for debugging
-        logger.info(f"Message: '{chat_message.message}' -> Intent: {intent} (confidence: {confidence:.2f})")
-
-        return ChatResponse(
-            response=response_text,
-            intent=intent,  # This can now be None or a string
-            confidence=confidence
+        # Send message to RASA and get response
+        rasa_response = await rasa_service.send_message_to_rasa(
+            message=chat_message.message,
+            sender_id=session_id
         )
 
+        # Return formatted response
+        return ChatResponse(**rasa_response)
+
     except Exception as e:
-        logger.error(f"Error processing chat message: {e}")
-        raise HTTPException(status_code=500, detail="Error processing your message")
+        logger.error(f"Error in chat endpoint: {e}")
+        # Fallback to basic response if RASA fails
+        fallback_response = rasa_service._fallback_response(chat_message.message)
+        return ChatResponse(**fallback_response)
+
+@router.get("/rasa/status")
+async def get_rasa_status():
+    """
+    Check RASA server status
+    """
+    try:
+        status = await rasa_service.get_rasa_status()
+        return status
+    except Exception as e:
+        logger.error(f"Error checking RASA status: {e}")
+        return {"status": "error", "message": str(e)}
 
 @router.get("/vaccination")
 async def get_vaccination_info(age_group: str = "adult"):
@@ -525,4 +541,3 @@ def get_response_for_intent_india(intent: str) -> str:
         return random.choice(INTENT_RESPONSES[intent])
     else:
         return "मैं आपकी स्वास्थ्य संबंधी मदद करना चाहता हूं। कृपया अधिक विवरण दें। / I want to help with your health question. Please provide more details. For medical emergencies, call 102."
-

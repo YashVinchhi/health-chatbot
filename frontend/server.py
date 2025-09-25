@@ -20,14 +20,15 @@ def open_browser():
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    server = HTTPServer(('localhost', 3001), CORSRequestHandler)
+    # Use 0.0.0.0 to accept connections from outside the container
+    server = HTTPServer(('0.0.0.0', 3001), CORSRequestHandler)
 
     print("Health Chatbot GUI Server starting...")
-    print("Server running at: http://localhost:3001")
-    print("Opening browser in 2 seconds...")
+    print("Server running at: http://0.0.0.0:3001")
+    print("Access from host at: http://localhost:3001")
 
-    # Open browser after 2 seconds
-    Timer(2.0, open_browser).start()
+    # Don't open browser when running in Docker container
+    # Timer(2.0, open_browser).start()
 
     try:
         server.serve_forever()

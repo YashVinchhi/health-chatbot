@@ -1,7 +1,7 @@
 import httpx
 import logging
 from typing import Dict, List, Optional, Any
-from config import settings
+from ..config import settings
 import asyncio
 from datetime import datetime
 
@@ -311,6 +311,30 @@ class IndiaHealthDataService:
                 ]
             }
         }
+
+    async def get_latest_health_news(self, limit: int = 5) -> Dict[str, Any]:
+        """Get latest health news from Data.gov.in API"""
+        try:
+            api_key = getattr(settings, 'data_gov_in_api_key', None)
+            if not api_key:
+                return {"success": False, "error": "Missing Data.gov.in API key"}
+            url = f"{self.data_gov_in_base}/resource/health-news"
+            params = {
+                "api-key": api_key,
+                "format": "json",
+                "limit": limit
+            }
+            response = await self.client.get(url, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                news_items = data.get("records", [])
+                return {
+                    "success": True,
+                    "data": news_items
+                }
+        except Exception as e:
+            logger.error(f"Error fetching health news: {e}")
+        return {"success": False, "error": "Unable to fetch latest health news"}
 
     async def close(self):
         """Close the HTTP client"""

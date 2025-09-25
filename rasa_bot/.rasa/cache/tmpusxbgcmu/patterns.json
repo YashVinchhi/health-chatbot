@@ -1,0 +1,18 @@
+[
+  {
+    "name": "symptom",
+    "pattern": "(\\bfever\\b|\\bheadache\\b|\\bcough\\b|\\bcold\\b|\\bsore\\ throat\\b|\\bnausea\\b|\\bvomiting\\b|\\bdiarrhea\\b|\\bstomach\\ pain\\b|\\bchest\\ pain\\b|\\bback\\ pain\\b|\\bjoint\\ pain\\b|\\bmuscle\\ pain\\b|\\bfatigue\\b|\\bweakness\\b|\\bdizziness\\b|\\bshortness\\ of\\ breath\\b|\\bdifficulty\\ breathing\\b|\\brash\\b|\\bitching\\b|\\bswelling\\b|\\bbleeding\\b|\\bbruising\\b)"
+  },
+  {
+    "name": "location",
+    "pattern": "(\\bDelhi\\b|\\bMumbai\\b|\\bBangalore\\b|\\bChennai\\b|\\bHyderabad\\b|\\bPune\\b|\\bKolkata\\b|\\bAhmedabad\\b|\\bJaipur\\b|\\bLucknow\\b|\\bKanpur\\b|\\bNagpur\\b|\\bVisakhapatnam\\b|\\bBhopal\\b|\\bPatna\\b|\\bLudhiana\\b|\\bAgra\\b|\\bNashik\\b|\\bVadodara\\b|\\bRajkot\\b)"
+  },
+  {
+    "name": "vaccine_type",
+    "pattern": "(\\bCOVID\\-19\\b|\\bCOVID\\b|\\bCovishield\\b|\\bCovaxin\\b|\\bflu\\b|\\binfluenza\\b|\\bhepatitis\\b|\\bmeasles\\b|\\bpolio\\b|\\btetanus\\b|\\bDPT\\b|\\bMMR\\b|\\bBCG\\b)"
+  },
+  {
+    "name": "disease",
+    "pattern": "(\\bCOVID\\-19\\b|\\bCOVID\\b|\\bflu\\b|\\binfluenza\\b|\\bdengue\\b|\\bmalaria\\b|\\bchikungunya\\b|\\bdiabetes\\b|\\bhypertension\\b|\\bheart\\ disease\\b|\\bcancer\\b|\\btuberculosis\\b|\\bpneumonia\\b)"
+  }
+]

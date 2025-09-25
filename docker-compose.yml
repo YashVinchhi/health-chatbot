@@ -12,6 +12,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - RASA_ACTIONS_URL=http://rasa-actions:5055/webhook
+      - SQLALCHEMY_SILENCE_UBER_WARNING=1
     # Use full rasa CLI invocation so the server starts with the API enabled
     command: ["run", "--enable-api", "--cors", "*", "--endpoints", "endpoints.yml"]
     depends_on:
@@ -28,6 +29,7 @@ services:
     environment:
       - PYTHONPATH=/app
       - BACKEND_URL=http://backend:8000
+      - SQLALCHEMY_SILENCE_UBER_WARNING=1
     command: ["start"]
 
   backend:

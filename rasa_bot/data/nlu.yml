@@ -11,6 +11,11 @@ nlu:
       - hi there
       - hello there
       - hey there
+      - namaste
+      - namaskar
+      - aap kaise hain
+      - how are you
+      - good day
 
   - intent: goodbye
     examples: |
@@ -21,47 +26,95 @@ nlu:
       - have a good day
       - bye bye
       - farewell
+      - take care
+      - dhanyawad
+      - thank you
+      - thanks for your help
 
   - intent: ask_symptoms
     examples: |
-      - I have a fever
-      - I'm feeling sick
-      - I have a headache
-      - I have a cold
-      - I'm coughing
-      - I have a sore throat
-      - I feel nauseous
-      - I have body aches
-      - I'm having chest pain
-      - I have difficulty breathing
-      - I have stomach pain
-      - I feel dizzy
-      - I have a rash
-      - I'm vomiting
-      - I have diarrhea
+      - I have a [fever](symptom)
+      - I'm feeling [sick](symptom)
+      - I have a [headache](symptom)
+      - I have a [cold](symptom)
+      - I'm [coughing](symptom)
+      - I have a [sore throat](symptom)
+      - I feel [nauseous](symptom)
+      - I have [body aches](symptom)
+      - I'm having [chest pain](symptom)
+      - I have [difficulty breathing](symptom)
+      - I have [stomach pain](symptom)
+      - I feel [dizzy](symptom)
+      - I have a [rash](symptom)
+      - I'm [vomiting](symptom)
+      - I have [diarrhea](symptom)
+      - My [head](symptom) hurts
+      - I have [joint pain](symptom)
+      - I feel [weakness](symptom)
+      - I have [fatigue](symptom)
+      - I'm experiencing [shortness of breath](symptom)
+      - I have [back pain](symptom)
+      - My [throat](symptom) is sore
+      - I have [muscle pain](symptom)
+      - I feel [tired](symptom) all the time
+      - I have [abdominal pain](symptom)
+      - I'm having [breathing problems](symptom)
+      - I feel [unwell](symptom)
+      - Something is wrong with my health
+      - I don't feel good
+      - I'm not feeling well
+      - I think I'm getting sick
+      - I have symptoms
+      - My body hurts
+      - I feel ill
+      - I'm under the weather
 
   - intent: ask_vaccination
     examples: |
       - When should I get vaccinated?
       - What vaccines do I need?
       - Where can I get vaccinated?
-      - Tell me about COVID vaccine
-      - I need flu shot
+      - Tell me about [COVID](vaccine_type) vaccine
+      - I need [flu](vaccine_type) shot
       - Vaccination schedule
       - Vaccine side effects
       - Is vaccination safe?
       - Vaccine for children
+      - [COVID-19](vaccine_type) vaccination information
+      - [Hepatitis](vaccine_type) vaccine
+      - [Measles](vaccine_type) vaccination
+      - Travel vaccines
+      - Adult vaccination schedule
+      - Child immunization
+      - Booster shots
+      - Vaccine appointments
+      - CoWIN registration
+      - Free vaccines in India
+      - Government vaccination program
+      - Mission Indradhanush
+      - Vaccine certificate
+      - Vaccination side effects
 
   - intent: ask_outbreak_info
     examples: |
       - Any disease outbreaks nearby?
-      - COVID cases in my area
+      - [COVID](disease) cases in my area
       - Health alerts
       - Disease outbreaks
       - Epidemic information
       - Health warnings
-      - Flu outbreak
+      - [Flu](disease) outbreak
       - Local health alerts
+      - [Dengue](disease) cases
+      - [Malaria](disease) outbreak
+      - Current health situation
+      - Disease surveillance
+      - Health advisories
+      - Outbreak notifications
+      - Public health emergency
+      - Seasonal diseases
+      - Monsoon diseases
+      - Health alert system
 
   - intent: ask_emergency
     examples: |
@@ -74,6 +127,19 @@ nlu:
       - Emergency room
       - Critical condition
       - Medical emergency
+      - Help me please
+      - This is urgent
+      - I need help now
+      - Emergency services
+      - Ambulance number
+      - Emergency numbers India
+      - Medical emergency India
+      - 102 ambulance
+      - 108 emergency
+      - Heart attack
+      - Stroke symptoms
+      - Accident help
+      - Poison emergency
 
   - intent: ask_general_health
     examples: |
@@ -86,17 +152,162 @@ nlu:
       - Sleep tips
       - Mental health
       - Wellness advice
+      - How to maintain good health
+      - Daily health routine
+      - Nutrition guidelines
+      - Fitness tips
+      - Healthy habits
+      - Disease prevention
+      - Immunity boosting
+      - Health maintenance
+      - Lifestyle tips
+      - Wellness guide
 
   - intent: ask_medication
     examples: |
       - What medicine should I take?
-      - Medication for fever
+      - Medication for [fever](symptom)
       - Drug interactions
       - Medicine dosage
       - Side effects
       - Prescription help
       - Over the counter medicine
       - Pain relievers
+      - Antibiotic information
+      - Medicine safety
+      - Drug allergies
+      - Generic medicines
+      - Jan Aushadhi
+      - Medicine storage
+      - Expiry dates
+      - Medicine consultation
+
+  - intent: ask_hospitals
+    examples: |
+      - Hospitals near me
+      - Find hospitals in [Delhi](location)
+      - Best hospitals in [Mumbai](location)
+      - Government hospitals
+      - Private hospitals
+      - Hospital contact numbers
+      - AIIMS hospitals
+      - Emergency hospitals
+      - Specialty hospitals
+      - Hospital services
+      - Medical facilities
+      - Healthcare centers
+      - Nursing homes
+      - Clinic near me
+      - Doctor consultation
+      - Hospital appointments
+
+  - intent: ask_location
+    examples: |
+      - I am in [Delhi](location)
+      - I live in [Mumbai](location)
+      - My location is [Bangalore](location)
+      - I'm from [Chennai](location)
+      - I'm in [Hyderabad](location)
+      - My city is [Pune](location)
+      - I'm located in [Kolkata](location)
+      - I'm in [Ahmedabad](location)
+      - Find services in [Jaipur](location)
+      - Healthcare in [Lucknow](location)
+
+  - intent: ask_cost
+    examples: |
+      - How much does treatment cost?
+      - Healthcare costs in India
+      - Affordable healthcare
+      - Free medical services
+      - Government healthcare costs
+      - Private hospital charges
+      - Insurance coverage
+      - Ayushman Bharat
+      - ESI benefits
+      - Medicine costs
+      - Consultation fees
+      - Test charges
+      - Surgery costs
+      - Emergency charges
+
+  - intent: affirm
+    examples: |
+      - yes
+      - yeah
+      - yep
+      - sure
+      - absolutely
+      - correct
+      - right
+      - that's right
+      - haan
+      - ji haan
+      - bilkul
+      - sahi hai
+
+  - intent: deny
+    examples: |
+      - no
+      - nope
+      - not really
+      - nah
+      - never
+      - I don't think so
+      - nahi
+      - bilkul nahi
+      - galat
+
+  - intent: ask_prevention
+    examples: |
+      - How to prevent [COVID](disease)?
+      - Prevention tips for [diabetes](disease)
+      - How to avoid getting sick?
+      - Disease prevention methods
+      - Preventive healthcare
+      - How to boost immunity?
+      - Infection prevention
+      - Safety measures
+      - Hygiene tips
+      - Health protection
+
+  - intent: ask_exercise
+    examples: |
+      - Exercise recommendations
+      - Workout plan
+      - Fitness routine
+      - Physical activity
+      - Yoga benefits
+      - Walking benefits
+      - Sports for health
+      - Exercise for [diabetes](disease)
+      - Workout for [heart](symptom) health
+      - Home exercises
+
+  - intent: ask_diet
+    examples: |
+      - Healthy diet plan
+      - Nutrition advice
+      - What should I eat?
+      - Diet for [diabetes](disease)
+      - Weight loss diet
+      - Balanced nutrition
+      - Indian healthy food
+      - Vegetarian diet
+      - Food for immunity
+
+  - intent: ask_mental_health
+    examples: |
+      - Mental health support
+      - Dealing with stress
+      - Anxiety help
+      - Depression symptoms
+      - Mental wellness
+      - Emotional health
+      - Stress management
+      - Counseling services
+      - Mental health helpline
+      - Psychological support
 
   - intent: bot_challenge
     examples: |
@@ -104,3 +315,88 @@ nlu:
       - are you human?
       - am I talking to a bot?
       - am I talking to a human?
+      - what are you?
+      - who are you?
+      - are you real?
+      - are you artificial intelligence?
+
+  - lookup: symptom
+    examples: |
+      - fever
+      - headache
+      - cough
+      - cold
+      - sore throat
+      - nausea
+      - vomiting
+      - diarrhea
+      - stomach pain
+      - chest pain
+      - back pain
+      - joint pain
+      - muscle pain
+      - fatigue
+      - weakness
+      - dizziness
+      - shortness of breath
+      - difficulty breathing
+      - rash
+      - itching
+      - swelling
+      - bleeding
+      - bruising
+
+  - lookup: location
+    examples: |
+      - Delhi
+      - Mumbai
+      - Bangalore
+      - Chennai
+      - Hyderabad
+      - Pune
+      - Kolkata
+      - Ahmedabad
+      - Jaipur
+      - Lucknow
+      - Kanpur
+      - Nagpur
+      - Visakhapatnam
+      - Bhopal
+      - Patna
+      - Ludhiana
+      - Agra
+      - Nashik
+      - Vadodara
+      - Rajkot
+
+  - lookup: vaccine_type
+    examples: |
+      - COVID-19
+      - COVID
+      - Covishield
+      - Covaxin
+      - flu
+      - influenza
+      - hepatitis
+      - measles
+      - polio
+      - tetanus
+      - DPT
+      - MMR
+      - BCG
+
+  - lookup: disease
+    examples: |
+      - COVID-19
+      - COVID
+      - flu
+      - influenza
+      - dengue
+      - malaria
+      - chikungunya
+      - diabetes
+      - hypertension
+      - heart disease
+      - cancer
+      - tuberculosis
+      - pneumonia
