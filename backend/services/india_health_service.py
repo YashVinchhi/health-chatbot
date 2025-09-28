@@ -1,7 +1,7 @@
 import httpx
 import logging
 from typing import Dict, List, Optional, Any
-from ..config import settings
+from config import settings
 import asyncio
 from datetime import datetime
 

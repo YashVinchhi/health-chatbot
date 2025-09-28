@@ -108,7 +108,7 @@ if %errorlevel%==0 (
 echo.
 echo 🎉 RASA Health Chatbot is now running!
 echo =======================================
-echo 🌐 Frontend: http://localhost:8000
+echo 🌐 Frontend: http://localhost:3001
 echo 🤖 RASA API: http://localhost:5005
 echo ⚡ Actions: http://localhost:5055
 echo 🔧 Backend API: http://localhost:8000/docs
@@ -120,10 +120,11 @@ echo    • 'Tell me about COVID vaccines'
 echo    • 'Find hospitals near me'
 echo    • 'I need emergency help'
 echo.
-echo 📝 Open your browser and visit: http://localhost:8000
+echo Opening web interface...
+start http://localhost:3001
 echo.
-echo Press any key to stop all services...
-pause >nul
+echo Keep this window open to maintain all services.
+pause
 
 REM Stop all services
 echo 🛑 Stopping all services...

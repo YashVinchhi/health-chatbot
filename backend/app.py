@@ -4,29 +4,18 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 import logging
 import os
+import sys
 
-# Use try/except to handle both local and Docker imports
-try:
-    # Try relative imports first (for Docker)
-    from .routers import whatsapp, sms, health_api
-    from .db.database import engine, wait_for_db
-    from .db import models
-    from .config import settings
-except ImportError:
-    # Fall back to absolute imports (for local development)
-    try:
-        from backend.routers import whatsapp, sms, health_api
-        from backend.db.database import engine, wait_for_db
-        from backend.db import models
-        from backend.config import settings
-    except ImportError:
-        # Last resort - direct imports
-        import sys
-        sys.path.append(os.path.join(os.path.dirname(__file__)))
-        from routers import whatsapp, sms, health_api
-        from db.database import engine, wait_for_db
-        from db import models
-        from config import settings
+# Add the backend directory to Python path for proper imports
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+# Now use direct imports since we're running from backend directory
+from routers import whatsapp, sms, health_api
+from db.database import engine, wait_for_db
+from db import models
+from config import settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -1,252 +1,265 @@
 """
 RASA Integration Service for Health Chatbot
-Handles communication with RASA server for intelligent response generation
+Enhanced with multi-port probing, retry logic, and adaptive URL selection.
 """
 
-import aiohttp
+import os
 import asyncio
 import logging
 from typing import Dict, Any, List, Optional
-import json
-import os
+import aiohttp
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 class RASAService:
     def __init__(self):
-        self.rasa_url = os.getenv("RASA_URL", "http://localhost:5005")
-        self.session = None
+        # Primary URL from env
+        self.rasa_url = os.getenv("RASA_URL", "http://localhost:5005").rstrip("/")
+        # Candidate fallback URLs (include historical port 5775 if earlier used)
+        extra = os.getenv("RASA_URL_CANDIDATES", "")
+        self.candidate_urls = [self.rasa_url, "http://localhost:5775", "http://127.0.0.1:5005", "http://127.0.0.1:5775"]
+        if extra:
+            self.candidate_urls.extend([u.strip().rstrip("/") for u in extra.split(",") if u.strip()])
+        # De-duplicate preserving order
+        seen = set()
+        self.candidate_urls = [u for u in self.candidate_urls if not (u in seen or seen.add(u))]
+        self.active_rasa_url: Optional[str] = None
+        self.rasa_actions_url = os.getenv("RASA_ACTIONS_URL", "http://localhost:5055").rstrip("/")
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.is_available: bool = False
+        self.last_status: Dict[str, Any] = {}
 
     async def get_session(self):
-        """Get or create aiohttp session"""
         if self.session is None or self.session.closed:
-            self.session = aiohttp.ClientSession()
+            timeout = aiohttp.ClientTimeout(total=20)
+            self.session = aiohttp.ClientSession(timeout=timeout)
         return self.session
 
-    async def close_session(self):
-        """Close aiohttp session"""
-        if self.session and not self.session.closed:
-            await self.session.close()
-
-    async def send_message_to_rasa(self, message: str, sender_id: str = "user") -> Dict[str, Any]:
-        """
-        Send message to RASA and get response
-
-        Args:
-            message: User's message
-            sender_id: Unique identifier for the user session
-
-        Returns:
-            Dictionary containing RASA response
-        """
+    async def _probe_single(self, base_url: str) -> Optional[Dict[str, Any]]:
+        """Try a single base URL, return status dict or None."""
         try:
             session = await self.get_session()
-
-            # RASA webhook endpoint
-            url = f"{self.rasa_url}/webhooks/rest/webhook"
-
-            payload = {
-                "sender": sender_id,
-                "message": message
-            }
-
-            async with session.post(url, json=payload) as response:
-                if response.status == 200:
-                    rasa_response = await response.json()
-                    logger.info(f"RASA response received for message: {message[:50]}...")
-                    return self._format_rasa_response(rasa_response, message)
+            async with session.get(f"{base_url}/status") as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return {"ok": True, "base_url": base_url, **data}
                 else:
-                    logger.error(f"RASA server error: {response.status}")
-                    return self._fallback_response(message)
-
-        except aiohttp.ClientError as e:
-            logger.error(f"Connection error to RASA server: {e}")
-            return self._fallback_response(message)
+                    logger.debug(f"RASA probe {base_url} returned HTTP {resp.status}")
         except Exception as e:
-            logger.error(f"Unexpected error in RASA communication: {e}")
-            return self._fallback_response(message)
+            logger.debug(f"RASA probe failed for {base_url}: {e}")
+        return None
 
-    def _format_rasa_response(self, rasa_response: List[Dict], original_message: str) -> Dict[str, Any]:
-        """
-        Format RASA response for frontend
+    async def _select_active_url(self) -> Optional[str]:
+        for url in self.candidate_urls:
+            result = await self._probe_single(url)
+            if result and result.get("ok"):
+                self.active_rasa_url = url
+                self.last_status = result
+                logger.info(f"RASA reachable at {url}")
+                return url
+        logger.warning("No reachable RASA base URL found from candidates: %s", self.candidate_urls)
+        return None
 
-        Args:
-            rasa_response: Raw response from RASA
-            original_message: Original user message
+    async def check_rasa_status(self, force_refresh: bool = False) -> Dict[str, Any]:
+        """Check or refresh RASA status with adaptive probing."""
+        if not force_refresh and self.is_available and self.active_rasa_url:
+            # Light ping
+            try:
+                session = await self.get_session()
+                async with session.get(f"{self.active_rasa_url}/status") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        self.last_status.update(data)
+                        return {"status": "online", **self.last_status}
+            except Exception:
+                logger.debug("Light ping failed, forcing full probe")
 
-        Returns:
-            Formatted response dictionary
-        """
-        if not rasa_response:
-            return self._fallback_response(original_message)
+        # Full probe
+        chosen = await self._select_active_url()
+        if chosen:
+            # Actions server optional
+            actions_ok = False
+            try:
+                session = await self.get_session()
+                async with session.get(f"{self.rasa_actions_url}/health") as aresp:
+                    actions_ok = aresp.status == 200
+            except Exception:
+                actions_ok = False
+            self.is_available = True
+            return {
+                "status": "online",
+                "rasa_server": True,
+                "actions_server": actions_ok,
+                "model_loaded": bool(self.last_status.get("model_file")),
+                "model_file": self.last_status.get("model_file"),
+                "version": self.last_status.get("version"),
+                "base_url": chosen,
+                "candidates": self.candidate_urls
+            }
+        else:
+            self.is_available = False
+            return {"status": "offline", "tried": self.candidate_urls}
 
-        # Combine all text responses from RASA
-        responses = []
-        buttons = []
-        quick_replies = []
+    async def send_message_to_rasa(self, message: str, sender_id: str = "user", conversation_history: List[Dict] = None) -> Dict[str, Any]:
+        # Ensure we have an active URL
+        if not self.active_rasa_url:
+            await self.check_rasa_status(force_refresh=True)
+        if not self.active_rasa_url:
+            logger.warning("Falling back: No active RASA URL after probing")
+            return await self._fallback_response(message, "no_connection")
 
-        for item in rasa_response:
-            if item.get("text"):
-                responses.append(item["text"])
+        payload = {"sender": sender_id, "message": message}
+        if conversation_history:
+            payload["metadata"] = {"conversation_history": conversation_history[-3:]}
 
-            # Handle buttons if present
-            if item.get("buttons"):
-                buttons.extend(item["buttons"])
+        session = await self.get_session()
+        url = f"{self.active_rasa_url}/webhooks/rest/webhook"
 
-            # Handle quick replies if present
-            if item.get("quick_replies"):
-                quick_replies.extend(item["quick_replies"])
+        # Retry strategy
+        attempts = 3
+        for attempt in range(1, attempts + 1):
+            try:
+                async with session.post(url, json=payload) as resp:
+                    if resp.status == 200:
+                        responses = await resp.json()
+                        if responses:
+                            return await self._process_rasa_response(responses, message, sender_id)
+                        logger.debug("Empty RASA webhook response, using fallback")
+                        return await self._fallback_response(message, "empty")
+                    elif resp.status == 404:
+                        logger.debug(f"RASA webhook 404 (attempt {attempt}) re-probing")
+                        # Possibly wrong endpoint, force re-probe once
+                        if attempt == 1:
+                            self.active_rasa_url = None
+                            await self.check_rasa_status(force_refresh=True)
+                            if not self.active_rasa_url:
+                                break
+                            url = f"{self.active_rasa_url}/webhooks/rest/webhook"
+                        else:
+                            break
+                    else:
+                        logger.warning(f"RASA HTTP {resp.status} attempt {attempt}/{attempts}")
+            except Exception as e:
+                logger.debug(f"RASA send attempt {attempt} failed: {e}")
+                if attempt == attempts:
+                    logger.warning("Falling back after maximum retry attempts")
+                    return await self._fallback_response(message, "exception")
+                # Re-probe before next attempt
+                self.active_rasa_url = None
+                await asyncio.sleep(0.5 * attempt)
+                await self.check_rasa_status(force_refresh=True)
+                if not self.active_rasa_url:
+                    logger.warning("Falling back: RASA offline after retry probe")
+                    return await self._fallback_response(message, "offline")
+                url = f"{self.active_rasa_url}/webhooks/rest/webhook"
+        return await self._fallback_response(message, "unreachable")
 
-        # Join all text responses
-        final_response = "\n\n".join(responses) if responses else self._get_default_response(original_message)
-
+    async def _process_rasa_response(self, rasa_responses: List[Dict], original_message: str, sender_id: str) -> Dict[str, Any]:
+        """Process and enhance RASA responses (fixed signature to include sender_id)"""
+        response_text = ""
+        buttons: List[Dict[str, Any]] = []
+        quick_replies: List[str] = []
+        for response in rasa_responses:
+            if "text" in response:
+                # Ensure newline separation without duplication
+                if response_text:
+                    response_text += "\n"
+                response_text += response["text"].strip()
+            if "buttons" in response:
+                buttons.extend(response["buttons"])
+            if "quick_replies" in response:
+                quick_replies.extend([qr.get("title", qr) for qr in response["quick_replies"]])
+        intent_info = await self._get_intent_info(original_message)
+        logger.debug(f"RASA intent parse: {intent_info}")
         return {
-            "response": final_response,
-            "sender": "bot",
-            "timestamp": datetime.now().isoformat(),
+            "response": response_text or "I'm here to help with your health questions!",
+            "intent": intent_info.get("intent", {}).get("name", "unknown"),
+            "confidence": intent_info.get("intent", {}).get("confidence", 0.0),
+            "entities": intent_info.get("entities", []),
             "buttons": buttons,
             "quick_replies": quick_replies,
-            "source": "rasa"
+            "source": "rasa",
+            "timestamp": datetime.now().isoformat()
         }
 
-    def _fallback_response(self, message: str) -> Dict[str, Any]:
-        """
-        Fallback response when RASA is unavailable
-
-        Args:
-            message: Original user message
-
-        Returns:
-            Fallback response dictionary
-        """
-        fallback_text = self._get_default_response(message)
-
-        return {
-            "response": fallback_text,
-            "sender": "bot",
-            "timestamp": datetime.now().isoformat(),
-            "buttons": [],
-            "quick_replies": [],
-            "source": "fallback"
-        }
-
-    def _get_default_response(self, message: str) -> str:
-        """
-        Generate basic response based on message content
-
-        Args:
-            message: User message
-
-        Returns:
-            Default response string
-        """
-        message_lower = message.lower()
-
-        # Basic pattern matching for fallback
-        if any(word in message_lower for word in ["hello", "hi", "hey", "greet"]):
-            return "Hello! I'm your health assistant. How can I help you today? 🏥"
-
-        elif any(word in message_lower for word in ["bye", "goodbye", "exit"]):
-            return "Goodbye! Take care of your health. Feel free to reach out anytime! 👋"
-
-        elif any(word in message_lower for word in ["fever", "sick", "pain", "hurt", "symptoms"]):
-            return """I understand you're experiencing health concerns. Here's what I recommend:
-
-🏥 **Immediate Steps:**
-• Monitor your symptoms carefully
-• Stay hydrated and get rest  
-• Take your temperature if possible
-• Seek medical attention if symptoms worsen
-
-⚠️ **Seek immediate medical help if you experience:**
-• Severe chest pain or difficulty breathing
-• High fever (over 103°F/39.4°C)
-• Severe abdominal pain
-• Signs of dehydration
-
-For personalized medical advice, please consult with a healthcare professional."""
-
-        elif any(word in message_lower for word in ["vaccine", "vaccination", "immunization"]):
-            return """💉 **Vaccination Information:**
-
-**Currently Recommended:**
-• COVID-19 vaccines and boosters
-• Annual influenza (flu) shots
-• Routine adult/childhood immunizations
-
-**For specific vaccine schedules:**
-• Consult your healthcare provider
-• Check with local health department
-• Visit CDC or WHO websites for guidelines
-
-Always discuss vaccination with your healthcare professional for personalized recommendations."""
-
-        elif any(word in message_lower for word in ["emergency", "urgent", "help", "911", "ambulance"]):
-            return """🚨 **EMERGENCY INFORMATION:**
-
-**Call Emergency Services Immediately:**
-• US: 911
-• India: 108  
-• UK: 999
-• Australia: 000
-
-**Emergency Signs:**
-• Chest pain or pressure
-• Difficulty breathing
-• Severe bleeding
-• Loss of consciousness
-• Severe allergic reactions
-
-**For non-emergency urgent care:**
-• Contact your healthcare provider
-• Visit urgent care center
-• Use telehealth services
-
-Don't delay seeking help for serious symptoms!"""
-
-        else:
-            return """I'm here to help with your health questions! I can assist with:
-
-🩺 **Symptom guidance** - General information about health concerns
-💉 **Vaccination info** - Current vaccine recommendations  
-🚨 **Emergency guidance** - When to seek immediate care
-🏥 **Health tips** - Wellness and prevention advice
-
-⚠️ **Important:** I provide general information only. For medical advice, diagnosis, or treatment, please consult qualified healthcare professionals.
-
-What would you like to know about your health?"""
-
-    async def get_rasa_status(self) -> Dict[str, Any]:
-        """
-        Check RASA server status
-
-        Returns:
-            Status information dictionary
-        """
+    async def _get_intent_info(self, message: str, sender_id: str = "user") -> Dict[str, Any]:
+        """Parse intent using the ACTIVE RASA URL (not the original env URL)"""
+        base = self.active_rasa_url or self.rasa_url
         try:
             session = await self.get_session()
-            url = f"{self.rasa_url}/status"
+            async with session.post(f"{base}/model/parse", json={"text": message}) as response:
+                if response.status == 200:
+                    return await response.json()
+                logger.debug(f"Intent parse HTTP {response.status} at {base}")
+                return {}
+        except Exception as e:
+            logger.error(f"Error getting intent info from {base}: {e}")
+            return {}
 
+    async def _fallback_response(self, message: str, error_type: str = "connection") -> Dict[str, Any]:
+        """Generate fallback response when RASA is unavailable"""
+        message_lower = message.lower()
+        logger.debug(f"Generating fallback response (reason={error_type}) for message='{message_lower[:60]}'")
+
+        # Basic pattern matching for common health queries
+        if any(word in message_lower for word in ['fever', 'बुखार', 'జ్వరం', 'காய்ச்சல்', 'জ্বর']):
+            response = """🌡️ **Fever Management:**\n• Rest and drink plenty of fluids\n• Take paracetamol as per package instructions\n• Use cool compresses\n• Consult doctor if fever >101°F or lasts >3 days\n• Emergency: Call 108 if fever >104°F"""
+
+        elif any(word in message_lower for word in ['hospital', 'अस्पताल', 'హాస్పిటల్', 'மருத்துவமனை', 'হাসপাতাল']):
+            response = """🏥 **Find Hospitals:**\n• Call 108 for emergency ambulance\n• Visit nearest district hospital or PHC\n• Use Google Maps for "hospitals near me"\n• Government hospitals: Free treatment available\n• Emergency: 108 | Health Helpline: 1075"""
+
+        elif any(word in message_lower for word in ['vaccine', 'vaccination', 'टीका', 'టీకా', 'தடுப்பூசி', 'টিকা']):
+            response = """💉 **Vaccination Information:**\n• COVID-19: Register on CoWIN portal (cowin.gov.in)\n• Call 1075 for vaccination helpline\n• Visit nearest government health center\n• Carry ID proof for vaccination\n• Free vaccines available at government centers"""
+
+        elif any(word in message_lower for word in ['emergency', 'help', 'urgent', 'आपातकाल', 'అత్యవసరం', 'அவசரம்', 'জরুরি']):
+            response = """🚨 **EMERGENCY CONTACTS:**\n• Medical Emergency: 108\n• Ambulance: 102\n• Police: 100\n• Fire: 101\n• Health Helpline: 1075\n• Women Helpline: 1091\n\n**For immediate life-threatening situations, call 108 NOW!**"""
+
+        elif any(word in message_lower for word in ['hello', 'hi', 'hey', 'नमस्ते', 'హలో', 'வணக்கம்', 'হ্যালো']):
+            response = """👋 **Hello! I'm your Health Assistant**\n\nI can help you with:\n• 🩺 Symptom guidance\n• 💉 Vaccination information  \n• 🏥 Find hospitals\n• 🚨 Emergency contacts\n• 💊 Medicine information\n\nWhat health information do you need today?"""
+
+        else:
+            response = """I'm your health assistant! I can help with:\n\n• **Symptoms**: "I have fever" or "मुझे बुखार है"\n• **Hospitals**: "Find hospitals near me" \n• **Vaccines**: "COVID vaccine information"\n• **Emergency**: "Emergency help needed"\n• **Medicine**: "Paracetamol information"\n\n**Emergency: Call 108 for immediate medical help**"""
+
+        return {
+            "response": response,
+            "intent": "fallback",
+            "confidence": 0.0,  # Distinguish clearly from real intent predictions
+            "source": f"fallback_{error_type}",
+            "timestamp": datetime.now().isoformat(),
+            "buttons": [],
+            "quick_replies": ["Find Hospitals", "Vaccination Info", "Emergency Help", "Symptom Guidance"]
+        }
+
+    async def get_conversation_history(self, sender_id: str) -> Dict[str, Any]:
+        """Get conversation history for a user"""
+        try:
+            session = await self.get_session()
+            url = f"{self.rasa_url}/conversations/{sender_id}/tracker"
             async with session.get(url) as response:
                 if response.status == 200:
-                    status_data = await response.json()
-                    return {
-                        "status": "online",
-                        "details": status_data
-                    }
-                else:
-                    return {
-                        "status": "error",
-                        "message": f"RASA server responded with status {response.status}"
-                    }
-
+                    return await response.json()
+                return {"events": []}
         except Exception as e:
-            logger.error(f"Error checking RASA status: {e}")
-            return {
-                "status": "offline",
-                "message": str(e)
-            }
+            logger.error(f"Error getting conversation history: {e}")
+            return {"events": []}
 
-# Global RASA service instance
+    async def train_model(self, training_data_path: str = None) -> Dict[str, Any]:
+        """Trigger model training (useful for updates)"""
+        try:
+            session = await self.get_session()
+            url = f"{self.rasa_url}/model/train"
+            payload = {}
+            if training_data_path:
+                payload["training_data"] = training_data_path
+            async with session.post(url, json=payload) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    return {"status": "success", "result": result}
+                return {"status": "error", "message": f"HTTP {response.status}"}
+        except Exception as e:
+            logger.error(f"Error training model: {e}")
+            return {"status": "error", "message": str(e)}
+
+# Create global instance
 rasa_service = RASAService()

@@ -1,4 +1,3 @@
-
 # Health Chatbot
 
 A multilingual health chatbot system for preventive healthcare and vaccination awareness using WhatsApp/SMS.
@@ -59,6 +58,26 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-=======
-# health-chatbot
-> b6193b6252525f113f7278f4b231f3a652dede1c
+
+## Ollama LLM Mode (Alternative to Rasa)
+
+An experimental local LLM pathway using [Ollama](https://ollama.com/) has been added. When enabled, the backend bypasses Rasa and uses a local model (default `llama3`) for intent + answer generation in structured JSON.
+
+### Enable
+Set the following environment variables (e.g. in `.env`):
+```
+USE_LLM=true
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3
+```
+Run Ollama locally and pull a model first:
+```
+ollama pull llama3
+```
+Then start only backend + frontend (you can skip all Rasa services). Requests to `/api/health/chat` will return `source: "llm"`.
+
+### Fallback & Safety
+If the LLM call fails or returns malformed JSON, a deterministic safety fallback answer is returned (`source: llm_fallback_*`). Emergency guidance always instructs users to call local emergency numbers (e.g., 108 in India) instead of generating speculative advice.
+
+### Switching Back to Rasa
+Unset `USE_LLM` or set it to `false` to restore the original Rasa pipeline without changing any client code.

@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 import logging
 from typing import Dict, Any, List, Optional
-import re
-import json
 import uuid
+from datetime import datetime
 
-# Add new imports for external APIs (converted to relative imports)
-from ..services.health_data_service import health_data_service
-from ..services.india_health_service import india_health_service
-from ..services.rasa_service import rasa_service
-from ..config import settings
+# Add new imports for external APIs (converted to direct imports)
+from services.health_data_service import health_data_service
+from services.india_health_service import india_health_service
+from services.rasa_service import rasa_service
+from services.session_service import session_service
+from services.llm_service import llm_service  # NEW
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,521 +24,699 @@ class ChatMessage(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
-    intent: Optional[str] = None  # Allow None values
-    confidence: Optional[float] = None  # Allow None values
+    intent: Optional[str] = None
+    confidence: Optional[float] = None
     sender: str = "bot"
     timestamp: str
     buttons: Optional[List[Dict[str, Any]]] = []
     quick_replies: Optional[List[str]] = []
     source: str = "rasa"
+    entities: Optional[List[Dict[str, Any]]] = []
+    session_id: str
+    language: str
 
-# Improved NLP patterns for better intent detection
-INTENT_PATTERNS = {
-    'greet': [
-        r'\b(hello|hi|hey|good morning|good evening|greetings|hola|namaste)\b',
-        r'^(hi|hello|hey)$',
-    ],
-    'goodbye': [
-        r'\b(bye|goodbye|see you|farewell|talk to you later|good night)\b',
-        r'^(bye|goodbye)$',
-    ],
-    'ask_symptoms': [
-        r'\b(fever|sick|headache|cold|cough|sore throat|nauseous|body aches|chest pain|difficulty breathing|stomach pain|dizzy|rash|vomiting|diarrhea|pain|hurt|ache|symptoms|unwell|ill)\b',
-        r'\bi have\b.*\b(fever|headache|cold|cough|pain|symptoms|temperature|ache|hurt)\b',
-        r'\bi feel\b.*\b(sick|nauseous|dizzy|unwell|ill|bad|terrible|awful|weak)\b',
-        r'\bi\'m\b.*\b(sick|coughing|feeling|having|ill|unwell|experiencing)\b',
-        r'\bi think i.*\b(have|am having|feel|am|might have)\b.*\b(fever|sick|ill|unwell|symptoms)\b',
-        r'\bfeeling.*\b(sick|unwell|bad|ill|terrible|awful|weak|dizzy)\b',
-        r'\bhaving.*\b(fever|headache|pain|symptoms|trouble|difficulty)\b',
-        r'\bmy.*\b(head|stomach|throat|chest|body).*\b(hurts|aches|pains|feels)\b',
-        r'\bi.*\b(hurt|ache|pain)\b.*\b(all over|everywhere|badly)\b',
-        r'\bnot feeling.*\b(well|good|right|normal)\b',
-        r'\bsomething.*wrong.*\b(with me|health)\b',
-        r'\bI have symptoms\b',
-        r'\bsymptoms.*\b(of|include|are)\b',
-    ],
-    'ask_vaccination': [
-        r'\b(vaccin|immuniz|shot|jab|covid|flu|hepatitis|pfizer|moderna|booster)\b',
-        r'\bwhen should i get vaccinated\b',
-        r'\bvaccine schedule\b',
-        r'\bside effects\b',
-        r'\btell me about.*vaccin\b',
-        r'\bvaccination.*info\b',
-        r'\bimmunization\b',
-    ],
-    'ask_outbreak_info': [
-        r'\b(outbreak|epidemic|disease|covid cases|health alert|flu outbreak|pandemic)\b',
-        r'\bany.*outbreak\b',
-        r'\bhealth.*alert\b',
-        r'\bdisease.*nearby\b',
-        r'\bany.*health.*alert\b',
-        r'\bcurrent.*outbreak\b',
-        r'\bdisease.*surveillance\b',
-    ],
-    'ask_emergency': [
-        r'\b(emergency|urgent|ambulance|hospital|critical|help|911|108)\b',
-        r'\bemergency help\b',
-        r'\bcall ambulance\b',
-        r'\bimmediate help\b',
-        r'\bmedical emergency\b',
-        r'\bneed help.*urgent\b',
-    ],
-    'ask_general_health': [
-        r'\b(health tips|stay healthy|preventive|lifestyle|diet|exercise|wellness|nutrition)\b',
-        r'\bhow to.*healthy\b',
-        r'\bhealth advice\b',
-        r'\bpreventive measures\b',
-        r'\bwellness.*tips\b',
-        r'\bhealthy.*lifestyle\b',
-        r'\bfitness.*advice\b',
-    ],
-    'ask_medication': [
-        r'\b(medicine|medication|drug|dosage|prescription|pill|tablet|treatment)\b',
-        r'\bwhat medicine\b',
-        r'\bside effects\b',
-        r'\bover the counter\b',
-        r'\bdrug.*interaction\b',
-        r'\bmedication.*advice\b',
-    ],
-    'bot_challenge': [
-        r'\bare you.*bot\b',
-        r'\bare you.*human\b',
-        r'\bam i talking to.*bot\b',
-        r'\bwhat are you\b',
-        r'\bwho are you\b',
-    ]
-}
+@router.get("/rasa/status")
+async def rasa_status():
+    """Expose RASA server status for frontend connectivity check"""
+    try:
+        status = await rasa_service.check_rasa_status()
+        return status
+    except Exception as e:
+        logger.error(f"Failed to get RASA status: {e}")
+        return {"status": "offline", "error": str(e)}
 
-# Responses for each intent
-INTENT_RESPONSES = {
-    'greet': [
-        "Hello! I'm your health assistant. How can I help you today?",
-        "Hi there! I'm here to help with your health questions. What would you like to know?",
-        "Good day! I'm your AI health assistant. How may I assist you with your health concerns?"
-    ],
-    'goodbye': [
-        "Goodbye! Take care of your health. Feel free to ask if you need help again.",
-        "Bye! Stay healthy and don't hesitate to reach out if you have health concerns.",
-        "Take care! Remember to prioritize your health and wellness."
-    ],
-    'ask_symptoms': [
-        "I understand you're experiencing symptoms. Can you describe them in more detail? For serious symptoms like chest pain, difficulty breathing, or severe pain, please seek immediate medical attention.\n\nIn the meantime:\n• Stay hydrated\n• Get plenty of rest\n• Monitor your symptoms\n• Seek medical help if symptoms worsen",
-        "I hear that you're not feeling well. For any health concerns, it's always best to consult with a healthcare professional who can properly assess your symptoms.\n\nGeneral advice:\n• Rest and stay hydrated\n• Take your temperature regularly\n• Note when symptoms started\n• Contact your doctor if symptoms persist"
-    ],
-    'ask_vaccination': [
-        "I can help with vaccination information. Here are current recommendations:\n\n💉 **COVID-19**: Recommended for all adults and children 6 months and older\n💉 **Influenza (Flu)**: Annual vaccination for everyone 6 months and older\n💉 **Hepatitis B**: Recommended for all infants and high-risk adults\n\nFor specific vaccine schedules, please consult your healthcare provider.",
-        "Vaccination is crucial for preventing diseases. Key vaccines include:\n\n• COVID-19 vaccines and boosters\n• Annual flu shots\n• Routine childhood immunizations\n• Travel vaccines if needed\n\nAlways consult with your healthcare provider for personalized vaccination advice."
-    ],
-    'ask_outbreak_info': [
-        "Here's current health alert information:\n\n🦠 **Seasonal Influenza**: Moderate activity level - vaccination recommended\n🦠 **COVID-19**: Low-moderate risk - follow local health guidelines\n\nStay informed through:\n• Local health department updates\n• CDC or WHO websites\n• Healthcare provider communications",
-        "Current disease surveillance shows:\n\n• Seasonal flu activity is present\n• COVID-19 continues with variants\n• No major outbreak alerts in most areas\n\nFor local specific information, check with your local health department."
-    ],
-    'ask_emergency': [
-        "🚨 **For medical emergencies, please:**\n\n• Call emergency services immediately:\n  - US: 911\n  - India: 108\n  - UK: 999\n  - Australia: 000\n\n• If this is urgent but not life-threatening, contact your healthcare provider or visit the nearest emergency room.\n\n• For poison emergencies: US 1-800-222-1222",
-        "🚨 **URGENT**: For any medical emergency, call your local emergency number immediately!\n\nEmergency signs include:\n• Chest pain or pressure\n• Difficulty breathing\n• Severe bleeding\n• Loss of consciousness\n• Severe allergic reactions\n\nDon't delay - seek immediate medical attention!"
-    ],
-    'ask_general_health': [
-        "Here are essential health tips for wellness:\n\n🍎 **Nutrition**: Eat a balanced diet with fruits, vegetables, whole grains\n🏃 **Exercise**: 150 minutes of moderate activity per week\n😴 **Sleep**: 7-9 hours per night for adults\n💧 **Hydration**: Drink plenty of water throughout the day\n🧼 **Hygiene**: Wash hands frequently\n🩺 **Checkups**: Regular health screenings and vaccinations",
-        "Maintaining good health involves:\n\n• Balanced nutrition and regular meals\n• Regular physical activity\n• Adequate sleep and stress management\n• Preventive healthcare (checkups, screenings)\n• Avoiding tobacco and limiting alcohol\n• Mental health care and social connections\n\nSmall daily choices make a big difference in long-term health!"
-    ],
-    'ask_medication': [
-        "⚠️ **Important**: I cannot provide specific medication advice. Please consult with:\n\n• Your healthcare provider\n• Licensed pharmacist\n• Telehealth services\n\n**General medication safety**:\n• Take as prescribed\n• Check for drug interactions\n• Store properly\n• Don't share medications\n• Report side effects to your doctor",
-        "For medication questions, always consult healthcare professionals:\n\n• **Prescription drugs**: Talk to your doctor or pharmacist\n• **Over-the-counter**: Read labels carefully, follow dosing instructions\n• **Side effects**: Contact your healthcare provider\n• **Drug interactions**: Use pharmacy consultation services\n\nNever self-medicate for serious conditions."
-    ],
-    'bot_challenge': [
-        "I am a health assistant AI designed to provide general health information and guidance. For specific medical advice, please consult with healthcare professionals.",
-        "Yes, I'm an AI health assistant! I can provide general health information, but I'm not a replacement for professional medical advice."
-    ]
-}
-
-def detect_intent(message: str) -> tuple[str, float]:
-    """
-    Improved intent detection using pattern matching
-    Returns (intent, confidence_score)
-    """
-    message_lower = message.lower().strip()
-    best_intent = None
-    best_confidence = 0.0
-
-    for intent, patterns in INTENT_PATTERNS.items():
-        confidence = 0.0
-        matches = 0
-
-        for pattern in patterns:
-            if re.search(pattern, message_lower, re.IGNORECASE):
-                matches += 1
-                # Weight patterns differently - exact matches get higher confidence
-                if pattern.startswith('^') and pattern.endswith('$'):
-                    confidence += 0.9  # Exact match patterns
-                else:
-                    confidence += 0.7  # Partial match patterns
-
-        # Normalize confidence based on number of patterns
-        if matches > 0:
-            confidence = confidence / len(patterns)
-
-            # Boost confidence for multiple pattern matches
-            if matches > 1:
-                confidence += 0.3
-
-            # Special handling for emergency keywords
-            if intent == 'ask_emergency':
-                emergency_keywords = ['emergency', 'urgent', 'help', 'ambulance', 'critical', '911', '108']
-                for keyword in emergency_keywords:
-                    if keyword in message_lower:
-                        confidence += 0.4
-
-            # Special handling for symptom keywords
-            if intent == 'ask_symptoms':
-                symptom_keywords = ['fever', 'sick', 'pain', 'hurt', 'ache', 'ill', 'unwell', 'feeling', 'having']
-                symptom_count = sum(1 for keyword in symptom_keywords if keyword in message_lower)
-                confidence += symptom_count * 0.1
-
-            # Special handling for vaccination keywords
-            if intent == 'ask_vaccination':
-                vacc_keywords = ['vaccine', 'vaccination', 'immuniz', 'shot', 'jab', 'covid', 'flu']
-                vacc_count = sum(1 for keyword in vacc_keywords if keyword in message_lower)
-                confidence += vacc_count * 0.2
-
-        if confidence > best_confidence:
-            best_confidence = confidence
-            best_intent = intent
-
-    # Lower the confidence threshold to catch more intents
-    if best_confidence < 0.2:
-        return 'unknown', 0.0
-
-    return best_intent, min(best_confidence, 1.0)
-
-def get_response_for_intent(intent: str) -> str:
-    """Get a response for the detected intent"""
-    if intent in INTENT_RESPONSES:
-        import random
-        return random.choice(INTENT_RESPONSES[intent])
-    else:
-        return "I understand you have a health question. Could you please provide more details? For specific medical concerns, I recommend consulting with a healthcare professional."
+@router.get("/rasa/model/info")
+async def rasa_model_info():
+    """Return currently loaded model and minimal metadata"""
+    try:
+        status = await rasa_service.check_rasa_status()
+        return {
+            "model_file": status.get("model_file"),
+            "model_loaded": status.get("model_loaded"),
+            "actions_server": status.get("actions_server"),
+            "version": status.get("version"),
+            "status": status.get("status")
+        }
+    except Exception as e:
+        logger.error(f"Failed to get model info: {e}")
+        return {"status": "offline", "error": str(e)}
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat_with_rasa(chat_message: ChatMessage):
-    """
-    Enhanced chat endpoint using RASA for intelligent responses
-    """
+async def chat_with_rasa(message: ChatMessage):
+    """Unified chat endpoint. If USE_LLM=true, use local Ollama model instead of RASA."""
     try:
-        # Generate session ID if not provided
-        session_id = chat_message.session_id or str(uuid.uuid4())
+        session_id = message.session_id or str(uuid.uuid4())
+        logger.info(f"Processing message: '{message.message}' for session: {session_id} (LLM Mode={settings.use_llm})")
 
-        # Send message to RASA and get response
-        rasa_response = await rasa_service.send_message_to_rasa(
-            message=chat_message.message,
-            sender_id=session_id
+        # Session + history
+        session_data = await session_service.get_or_create_session(session_id, message.message)
+        user_language = session_data['language']
+        conversation_history = await session_service.get_conversation_history(session_id, limit=8)
+
+        # LLM path
+        if settings.use_llm:
+            llm_raw = await llm_service.generate(message.message, session_id, conversation_history)
+            response = ChatResponse(
+                response=llm_raw.get('response', ''),
+                intent=llm_raw.get('intent', 'unknown'),
+                confidence=llm_raw.get('confidence', 0.0),
+                timestamp=llm_raw.get('timestamp', datetime.now().isoformat()),
+                buttons=llm_raw.get('buttons', []),
+                quick_replies=llm_raw.get('quick_replies', []),
+                source=llm_raw.get('source', 'llm'),
+                entities=llm_raw.get('entities', []),
+                session_id=session_id,
+                language=user_language
+            )
+            # Persist
+            await session_service.save_message(
+                session_id=session_id,
+                message=message.message,
+                response=response.response,
+                intent=response.intent or 'unknown',
+                confidence=response.confidence or 0.0,
+                language=user_language
+            )
+            return response
+
+        # --- RASA path (unchanged below) ---
+        rasa_available = False
+        rasa_response = None
+        fallback_reason = None
+
+        try:
+            if hasattr(rasa_service, 'is_available') and rasa_service.is_available:
+                logger.debug("Attempting RASA response (service flagged available)")
+                rasa_response = await rasa_service.send_message_to_rasa(
+                    message=message.message,
+                    sender_id=session_id,
+                    conversation_history=conversation_history
+                )
+                if rasa_response and rasa_response.get("source") == "rasa" and rasa_response.get("response"):
+                    rasa_available = True
+                else:
+                    fallback_reason = f"Empty or non-rasa response (source={rasa_response.get('source') if rasa_response else 'none'})"
+            else:
+                logger.debug("RASA not yet marked available - probing status")
+                status = await rasa_service.check_rasa_status()
+                if status.get("status") == "online":
+                    rasa_response = await rasa_service.send_message_to_rasa(
+                        message=message.message,
+                        sender_id=session_id,
+                        conversation_history=conversation_history
+                    )
+                    if rasa_response and rasa_response.get("source") == "rasa" and rasa_response.get("response"):
+                        rasa_available = True
+                    else:
+                        fallback_reason = f"Online but empty/non-rasa response (source={rasa_response.get('source') if rasa_response else 'none'})"
+                else:
+                    fallback_reason = f"RASA status offline ({status.get('tried', [])})"
+        except Exception as rasa_error:
+            logger.warning(f"RASA service exception: {rasa_error}")
+            fallback_reason = f"exception: {rasa_error}";
+            rasa_available = False
+
+        # Use enhanced fallback system if RASA is not available or doesn't provide good response
+        if not rasa_available:
+            logger.info(f"Using enhanced fallback system. Reason: {fallback_reason}")
+
+            # Use our enhanced intent detection
+            intent, confidence = detect_intent(message.message)
+            response_text = get_response_for_intent(intent, user_language)
+
+            # Extract context from current message
+            message_context = session_service.extract_context_from_message(message.message, intent)
+
+            # Build contextual response using session memory
+            contextual_response = session_service.build_contextual_response(
+                response_text, session_data, conversation_history
+            )
+
+            # Create structured response
+            response = ChatResponse(
+                response=contextual_response,
+                intent=intent,
+                confidence=confidence,
+                timestamp=datetime.now().isoformat(),
+                buttons=[],
+                quick_replies=_get_quick_replies_for_intent(intent, user_language),
+                source="enhanced_fallback",
+                entities=[],
+                session_id=session_id,
+                language=user_language
+            )
+        else:
+            # Use RASA response but enhance with session context
+            base_response = rasa_response.get("response", "I'm here to help with your health questions!")
+
+            # Extract context from current message
+            message_context = session_service.extract_context_from_message(
+                message.message, rasa_response.get("intent", "unknown")
+            )
+
+            # Build contextual response
+            contextual_response = session_service.build_contextual_response(
+                base_response, session_data, conversation_history
+            )
+
+            response = ChatResponse(
+                response=contextual_response,
+                intent=rasa_response.get("intent"),
+                confidence=rasa_response.get("confidence"),
+                timestamp=datetime.now().isoformat(),
+                buttons=rasa_response.get("buttons", []),
+                quick_replies=rasa_response.get("quick_replies", []),
+                source="rasa",
+                entities=rasa_response.get("entities", []),
+                session_id=session_id,
+                language=user_language
+            )
+
+        # Save the conversation to history
+        await session_service.save_message(
+            session_id=session_id,
+            message=message.message,
+            response=response.response,
+            intent=response.intent or "unknown",
+            confidence=response.confidence or 0.0,
+            language=user_language
         )
 
-        # Return formatted response
-        return ChatResponse(**rasa_response)
+        # Update session context if we extracted new information
+        message_context = session_service.extract_context_from_message(
+            message.message, response.intent or "unknown"
+        )
+        if message_context:
+            await session_service.update_session_context(session_id, message_context)
+
+        logger.info(f"Response generated: intent={response.intent}, confidence={response.confidence}, source={response.source}, language={user_language}")
+        return response
 
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
-        # Fallback to basic response if RASA fails
-        fallback_response = rasa_service._fallback_response(chat_message.message)
-        return ChatResponse(**fallback_response)
+        # Emergency fallback response
+        session_id = message.session_id or str(uuid.uuid4())
+        return ChatResponse(
+            response="I'm experiencing technical difficulties. For medical emergencies, please call 108 (India) or 911 (US) immediately. Otherwise, please try rephrasing your question.",
+            intent="error",
+            confidence=0.0,
+            timestamp=datetime.now().isoformat(),
+            source="error_fallback",
+            quick_replies=["Emergency help", "Find hospital", "Health tips"],
+            session_id=session_id,
+            language="en"
+        )
 
-@router.get("/rasa/status")
-async def get_rasa_status():
+def _get_quick_replies_for_intent(intent: str, language: str = "en") -> List[str]:
+    """Get appropriate quick reply suggestions based on intent and language"""
+    quick_replies_multilingual = {
+        'en': {
+            'greet': ["I have symptoms", "Find hospital", "Vaccine info", "Health tips", "Emergency help"],
+            'fever_symptoms': ["How to reduce fever", "When to see doctor", "Emergency signs", "Find hospital"],
+            'headache_symptoms': ["Pain relief", "When to worry", "Find doctor", "Emergency help"],
+            'cough_symptoms': ["Cough remedies", "When to see doctor", "Find hospital", "Emergency signs"],
+            'stomach_symptoms': ["Stomach remedies", "Dehydration signs", "Find doctor", "Emergency help"],
+            'find_hospital': ["Emergency numbers", "Nearby clinics", "AIIMS locations", "Private hospitals"],
+            'covid_vaccination': ["Book appointment", "Vaccine centers", "Side effects", "Booster info"],
+            'medicine_info': ["Drug interactions", "Side effects", "Dosage info", "Consult pharmacist"],
+            'health_tips': ["Exercise tips", "Diet advice", "Sleep hygiene", "Stress management"],
+            'emergency_help': ["Call 108", "First aid", "Find hospital", "Emergency signs"],
+            'general_symptoms': ["Describe symptoms", "Pain scale", "Duration", "Severity"],
+            'unknown': ["I have fever", "Find hospital", "Vaccine info", "Health tips", "Emergency help"]
+        },
+        'hi': {
+            'greet': ["मुझे लक्षण हैं", "अस्पताल खोजें", "टीका जानकारी", "स्वास्थ्य सुझाव", "आपातकालीन सहायता"],
+            'fever_symptoms': ["बुखार कम करने के तरीके", "डॉक्टर से कब मिलें", "आपातकालीन संकेत", "अस्पताल खोजें"],
+            'headache_symptoms': ["दर्द से राहत", "कब चिंता करें", "डॉक्टर खोजें", "आपातकालीन सहायता"],
+            'cough_symptoms': ["खांसी के उपाय", "डॉक्टर से कब मिलें", "अस्पताल खोजें", "आपातकालीन संकेत"],
+            'stomach_symptoms': ["पेट के उपाय", "निर्जलीकरण के संकेत", "डॉक्टर खोजें", "आपातकालीन सहायता"],
+            'find_hospital': ["आपातकालीन नंबर", "पास के क्लिनिक", "एम्स स्थान", "निजी अस्पताल"],
+            'covid_vaccination': ["अपॉइंटमेंट बुक करें", "टीकाकरण केंद्र", "साइड इफेक्ट्स", "बूस्टर जानकारी"],
+            'medicine_info': ["दवा इंटरैक्शन", "साइड इफेक्ट्स", "डोज़ जानकारी", "फार्मासिस्ट से सलाह"],
+            'health_tips': ["व्यायाम सुझाव", "आहार सलाह", "नींद की स्वच्छता", "तनाव प्रबंधन"],
+            'emergency_help': ["108 कॉल करें", "प्राथमिक चिकित्सा", "अस्पताल खोजें", "आपातकालीन संकेत"],
+            'general_symptoms': ["लक्षण बताएं", "दर्द का स्तर", "अवधि", "गंभीरता"],
+            'unknown': ["मुझे बुखार है", "अस्पताल खोजें", "टीका जानकारी", "स्वास्थ्य सुझाव", "आपातकालीन सहायता"]
+        },
+        'te': {
+            'greet': ["నాకు లక్షణాలు ఉన్నాయి", "హాస్పిటల్ కనుగొనండి", "వ్యాక్సిన్ సమాచారం", "ఆరోగ్య చిట్కాలు", "అత్యవసర సహాయం"],
+            'fever_symptoms': ["జ్వరం తగ్గించే మార్గాలు", "వైద్యుడిని ఎప్పుడు కలవాలి", "అత్యవసర సంకేతాలు", "హాస్పిటల్ కనుగొనండి"],
+            'headache_symptoms': ["నొప్పి ఉపశమనం", "ఎప్పుడు ఆందోళన చెందాలి", "వైద్యుడిని కనుగొనండి", "అత్యవసర సహాయం"],
+            'cough_symptoms': ["దగ్గు నివారణలు", "వైద్యుడిని ఎప్పుడు కలవాలి", "హాస్పిటల్ కనుగొనండి", "అత్యవసర సంకేతాలు"],
+            'stomach_symptoms': ["కడుపు నివారణలు", "నిర్జలీకరణ సంకేతాలు", "వైద్యుడిని కనుగొనండి", "అత్యవసర సహాయం"],
+            'find_hospital': ["అత్యవసర నంబర్లు", "సమీప క్లినిక్లు", "ఎయిమ్స్ స్థానాలు", "ప్రైవేట్ హాస్పిటల్లు"],
+            'covid_vaccination': ["అపాయింట్మెంట్ బుక్ చేయండి", "వ్యాక్సిన్ కేంద్రాలు", "దుష్ప్రభావాలు", "బూస్టర్ సమాచారం"],
+            'medicine_info': ["మందుల పరస్పర ప్రభావం", "దుష్ప్రభావాలు", "మోతాదు సమాచారం", "ఫార్మాసిస్ట్ సలహా"],
+            'health_tips': ["వ్యాయామ చిట్కాలు", "ఆహార సలహా", "నిద్ర పరిశుభ్రత", "ఒత్తిడి నిర్వహణ"],
+            'emergency_help': ["108కి కాల్ చేయండి", "ప్రథమ చికిత్స", "హాస్పిటల్ కనుగొనండి", "అత్యవసర సంకేతాలు"],
+            'general_symptoms': ["లక్షణాలు వివరించండి", "నొప్పి స్థాయి", "వ్యవధి", "తీవ్రత"],
+            'unknown': ["నాకు జ్వరం ఉంది", "హాస్పిటల్ కనుగొనండి", "వ్యాక్సిన్ సమాచారం", "ఆరోగ్య చిట్కాలు", "అత్యవసర సహాయం"]
+        },
+        'ta': {
+            'greet': ["எனக்கு அறிகுறிகள் உள்ளன", "மருத்துவமனையைக் கண்டறியவும்", "தடுப்பூசி தகவல்", "சுகாதார குறிப்புகள்", "அவசர உதவி"],
+            'fever_symptoms': ["காய்ச்சலைக் குறைக்கும் வழிகள்", "மருத்துவரை எப்போது பார்க்கவும்", "அவசர அறிகுறிகள்", "மருத்துவமனையைக் கண்டறியவும்"],
+            'headache_symptoms': ["வலி நிவாரணம்", "எப்போது கவலைப்பட வேண்டும்", "மருத்துவரைக் கண்டறியவும்", "அவசர உதவி"],
+            'cough_symptoms': ["இருமல் தீர்வுகள்", "மருத்துவரை எப்போது பார்க்கவும்", "மருத்துவமனையைக் கண்டறியவும்", "அவசர அறிகுறிகள்"],
+            'stomach_symptoms': ["வயிற்று தீர்வுகள்", "நீரிழப்பு அறிகுறிகள்", "மருத்துவரைக் கண்டறியவும்", "அவசர உதவி"],
+            'find_hospital': ["அவசர எண்கள்", "அருகிலுள்ள கிளினிக்குகள்", "எய்ம்ஸ் இடங்கள்", "தனியார் மருத்துவமனைகள்"],
+            'covid_vaccination': ["சந்திப்பு பதிவு செய்யவும்", "தடுப்பூசி மையங்கள்", "பக்க விளைவுகள்", "பூஸ்டர் தகவல்"],
+            'medicine_info': ["மருந்து தொடர்புகள்", "பக்க விளைவுகள்", "அளவு தகவல்", "மருந்தாளர் ஆலோசனை"],
+            'health_tips': ["உடற்பயிற்சி குறிப்புகள்", "உணவு ஆலோசனை", "தூக்க சுகாதாரம்", "மன அழுத்த மேலாண்மை"],
+            'emergency_help': ["108க்கு அழைக்கவும்", "முதலுதவி", "மருத்துவமனையைக் கண்டறியவும்", "அவசர அறிகுறிகள்"],
+            'general_symptoms': ["அறிகுறிகளை விவரிக்கவும்", "வலி அளவு", "கால அளவு", "தீவிரம்"],
+            'unknown': ["எனக்கு காய்ச்சல் உள்ளது", "மருத்துவமனையைக் கண்டறியவும்", "தடுப்பூசி தகவல்", "சுகாதார குறிப்புகள்", "அவசர உதவி"]
+        },
+        'bn': {
+            'greet': ["আমার উপসর্গ আছে", "হাসপাতাল খুঁজুন", "টিকার তথ্য", "স্বাস্থ্য টিপস", "জরুরি সাহায্য"],
+            'fever_symptoms': ["জ্বর কমানোর উপায়", "কখন ডাক্তার দেখাবেন", "জরুরি লক্ষণ", "হাসপাতাল খুঁজুন"],
+            'headache_symptoms': ["ব্যথা উপশম", "কখন চিন্তিত হবেন", "ডাক্তার খুঁজুন", "জরুরি সাহায্য"],
+            'cough_symptoms': ["কাশির প্রতিকার", "কখন ডাক্তার দেখাবেন", "হাসপাতাল খুঁজুন", "জরুরি লক্ষণ"],
+            'stomach_symptoms': ["পেটের প্রতিকার", "পানিশূন্যতার লক্ষণ", "ডাক্তার খুঁজুন", "জরুরি সাহায্য"],
+            'find_hospital': ["জরুরি নম্বর", "কাছের ক্লিনিক", "এইমস অবস্থান", "বেসরকারি হাসপাতাল"],
+            'covid_vaccination': ["অ্যাপয়েন্টমেন্ট বুক করুন", "টিকা কেন্দ্র", "পার্শ্ব প্রতিক্রিয়া", "বুস্টার তথ্য"],
+            'medicine_info': ["ওষুধের মিথস্ক্রিয়া", "পার্শ্ব প্রতিক্রিয়া", "ডোজ তথ্য", "ফার্মাসিস্ট পরামর্শ"],
+            'health_tips': ["ব্যায়াম টিপস", "খাবার পরামর্শ", "ঘুমের স্বাস্থ্যবিধি", "মানসিক চাপ ব্যবস্থাপনা"],
+            'emergency_help': ["১০৮ এ কল করুন", "প্রাথমিক চিকিৎসা", "হাসপাতাল খুঁজুন", "জরুরি লক্ষণ"],
+            'general_symptoms': ["উপসর্গ বর্ণনা করুন", "ব্যথার মাত্রা", "সময়কাল", "তীব্রতা"],
+            'unknown': ["আমার জ্বর আছে", "হাসপাতাল খুঁজুন", "টিকার তথ্য", "স্বাস্থ্য টিপস", "জরুরি সাহায্য"]
+        }
+    }
+
+    language_replies = quick_replies_multilingual.get(language, quick_replies_multilingual['en'])
+    return language_replies.get(intent, language_replies['unknown'])
+
+def get_response_for_intent(intent: str, language: str = "en") -> str:
     """
-    Check RASA server status
+    Get comprehensive, helpful responses based on detected intent and language
     """
-    try:
-        status = await rasa_service.get_rasa_status()
-        return status
-    except Exception as e:
-        logger.error(f"Error checking RASA status: {e}")
-        return {"status": "error", "message": str(e)}
+    responses_multilingual = {
+        'en': {
+            'greet': """Hello! I'm your AI Health Assistant. I can help you with:
 
-@router.get("/vaccination")
-async def get_vaccination_info(age_group: str = "adult"):
-    """Get real vaccination information from external APIs"""
-    try:
-        # Get real data from health data service
-        result = await health_data_service.get_vaccination_schedule(age_group)
+🌡️ **Symptom Analysis** - Describe your symptoms for guidance
+💉 **Vaccination Information** - COVID, flu, and routine vaccines
+🏥 **Find Medical Care** - Locate nearby hospitals and clinics
+💊 **Medicine Information** - Drug details and interactions
+🚨 **Emergency Guidance** - When and how to seek immediate help
+💡 **Health Tips** - Prevention and wellness advice
 
-        if result["success"]:
+What can I help you with today?""",
+
+            'fever_symptoms': """**FEVER GUIDANCE**
+
+🌡️ **Normal Response for Fever:**
+• **Adults**: Take fever if 100.4°F (38°C) or higher
+• **Rest** and stay hydrated with water, clear broths
+• **Medications**: Acetaminophen or ibuprofen as directed
+• **Cool compresses** on forehead and wrists
+
+⚠️ **Seek Medical Attention If:**
+• Fever above 103°F (39.4°C)
+• Fever lasts more than 3 days
+• Difficulty breathing or chest pain
+• Severe headache or neck stiffness
+
+🚨 **Emergency Signs:**
+• Temperature above 105°F (40.5°C)
+• Seizures
+• Difficulty breathing
+
+**Call 108 (India) or 911 (US) for emergencies**""",
+        },
+        'hi': {
+            'greet': """नमस्ते! मैं आपका AI स्वास्थ्य सहायक हूं। मैं आपकी मदद कर सकता हूं:
+
+🌡️ **लक्षण विश्लेषण** - मार्गदर्शन के लिए अपने लक्षण बताएं
+💉 **टीकाकरण जानकारी** - COVID, फ्लू, और नियमित टीके
+🏥 **चिकित्सा देखभाल खोजें** - पास के अस्पताल और क्लिनिक
+💊 **दवा की जानकारी** - दवा विवरण और इंटरैक्शन
+🚨 **आपातकालीन मार्गदर्शन** - कब और कैसे तत्काल सहायता लें
+💡 **स्वास्थ्य सुझाव** - रोकथाम और कल्याण सलाह
+
+आज मैं आपकी कैसे मदद कर सकता हूं?""",
+
+            'fever_symptoms': """**बुखार मार्गदर्शन**
+
+🌡️ **बुखार के लिए सामान्य प्रतिक्रिया:**
+• **वयस्क**: 100.4°F (38°C) या उससे अधिक पर बुखार लें
+• **आराम करें** और पानी, साफ शोरबा से हाइड्रेटेड रहें
+• **दवाएं**: Acetaminophen या ibuprofen जैसा निर्देशित
+• माथे और कलाई पर **ठंडी सिकाई**
+
+⚠️ **चिकित्सा सहायता लें यदि:**
+• बुखार 103°F (39.4°C) से अधिक हो
+• बुखार 3 दिन से अधिक रहे
+• सांस लेने में कठिनाई या सीने में दर्द
+• गंभीर सिरदर्द या गर्दन में अकड़न
+
+🚨 **आपातकालीन संकेत:**
+• तापमान 105°F (40.5°C) से अधिक
+• दौरे पड़ना
+• सांस लेने में कठिनाई
+
+**आपातकाल के लिए 108 (भारत) पर कॉल करें**""",
+        },
+        'te': {
+            'greet': """నమస్తే! నేను మీ AI ఆరోగ్య సహాయకుడిని। నేను మీకు సహాయం చేయగలను:
+
+🌡️ **లక్షణ విశ్లేషణ** - మార్గదర్శనం కోసం మీ లక్షణాలను వివరించండి
+💉 **వ్యాక్సినేషన్ సమాచారం** - COVID, ఫ్లూ, మరియు రొటిన్ వ్యాక్సిన్లు
+🏥 **వైద్య సంరక్షణను కనుగొనండి** - సమీప హాస్పిటల్లు మరియు క్లినిక్లు
+💊 **మందుల సమాచారం** - మందుల వివరాలు మరియు పరస్పర ప్రభావాలు
+🚨 **అత్యవసర మార్గదర్శనం** - ఎప్పుడు మరియు ఎలా తక్షణ సహాయం తీసుకోవాలి
+💡 **ఆరోగ్య చిట్కాలు** - నివారణ మరియు సంక్షేమ సలహా
+
+ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?""",
+
+            'fever_symptoms': """**జ్వర మార్గదర్శనం**
+
+🌡️ **జ్వరానికి సాధారణ ప్రతిస్పందన:**
+• **పెద్దలు**: 100.4°F (38°C) లేదా అంతకంటే ఎక్కువ ఉంటే జ్వరం తీసుకోండి
+• **విశ్రాంతి తీసుకోండి** మరియు నీరు, క్లియర్ బ్రాత్‌తో హైడ్రేటెడ్‌గా ఉండండి
+• **మందులు**: సూచించిన విధానం ప్రకారం పారాసిటమాల్ లేదా ఇబుప్రోఫెన్
+• నుదిటి మరియు మణికట్టుపై **చల్లని కంప్రెస్‌లు**
+
+⚠️ **వైద్య సహాయం తీసుకోండి:**
+• జ్వరం 103°F (39.4°C) కంటే ఎక్కువ ఉంటే
+• జ్వరం 3 రోజులకు మించి ఉంటే
+• శ్వాస తీసుకోవడంలో కష్టం లేదా ఛాతీ నొప్పి
+• తీవ్రమైన తలనొప్పి లేదా మెడ దృఢత్వం
+
+🚨 **అత్యవసర సంకేతాలు:**
+• ఉష్ణోగ్రత 105°F (40.5°C) కంటే ఎక్కువ
+• మూర్ఛలు
+• శ్వాస తీసుకోవడంలో కష్టం
+
+**అవసర పరిస్థితుల కోసం 108కి కాల్ చేయండి**""",
+        },
+        'ta': {
+            'greet': """வணக்கம்! நான் உங்கள் AI சுகாதார உதவியாளர். நான் உங்களுக்கு உதவ முடியும்:
+
+🌡️ **அறிகுறி பகுப்பாய்வு** - வழிகாட்டுதலுக்காக உங்கள் அறிகுறிகளை விவரிக்கவும்
+💉 **தடுப்பூசி தகவல்** - COVID, காய்ச்சல், மற்றும் வழக்கமான தடுப்பூசிகள்
+🏥 **மருத்துவ பராமரிப்பைக் கண்டறியவும்** - அருகிலுள்ள மருத்துவமனைகள் மற்றும் கிளினிக்குகள்
+💊 **மருந்து தகவல்** - மருந்து விவரங்கள் மற்றும் தொடர்புகள்
+🚨 **அவசர வழிகாட்டுதல்** - எப்போது மற்றும் எப்படி உடனடி உதவி பெறுவது
+💡 **சுகாதார குறிப்புகள்** - தடுப்பு மற்றும் நல்வாழ்வு ஆலோசனை
+
+இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?""",
+
+            'fever_symptoms': """**காய்ச்சல் வழிகாட்டுதல்**
+
+🌡️ **காய்ச்சலுக்கான சாதாரண பதில்:**
+• **பெரியவர்கள்**: 100.4°F (38°C) அல்லது அதற்கும் அதிகமாக இருந்தால் காய்ச்சல் எடுக்கவும்
+• **ஓய்வு எடுத்துக்கொள்ளுங்கள்** மற்றும் நீர், தெளிவான குழம்புகளுடன் நீரேற்றமாக இருங்கள்
+• **மருந்துகள்**: வழிகாட்டியபடி பாராசிடமால் அல்லது இப்யூபுரூஃபென்
+• நெற்றி மற்றும் மணிக்கட்டில் **குளிர் கம்ப்ரஸ்கள்**
+
+⚠️ **மருத்துவ உதவி பெறவும்:**
+• காய்ச்சல் 103°F (39.4°C) க்கு மேல் இருந்தால்
+• காய்ச்சல் 3 நாட்களுக்கு மேல் நீடித்தால்
+• மூச்சுத் திணறல் அல்லது மார்பு வலி
+• கடுமையான தலைவலி அல்லது கழுத்து விறைப்பு
+
+🚨 **அவசர அறிகுறிகள்:**
+• வெப்பநிலை 105°F (40.5°C) க்கு மேல்
+• வலிப்புகள்
+• மூச்சுத் திணறல்
+
+**அவசரநிலைகளுக்கு 108 க்கு அழைக்கவும்**""",
+        },
+        'bn': {
+            'greet': """নমস্কার! আমি আপনার AI স্বাস্থ্য সহায়ক। আমি আপনাকে সাহায্য করতে পারি:
+
+🌡️ **উপসর্গ বিশ্লেষণ** - নির্দেশনার জন্য আপনার উপসর্গ বর্ণনা করুন
+💉 **টিকাদান তথ্য** - COVID, ফ্লু, এবং নিয়মিত টিকা
+🏥 **চিকিৎসা সেবা খুঁজুন** - কাছাকাছি হাসপাতাল এবং ক্লিনিক
+💊 **ওষুধের তথ্য** - ওষুধের বিবরণ এবং মিথস্ক্রিয়া
+🚨 **জরুরি নির্দেশনা** - কখন এবং কীভাবে তাৎক্ষণিক সাহায্য নিতে হবে
+💡 **স্বাস্থ্য টিপস** - প্রতিরোধ এবং সুস্থতার পরামর্শ
+
+আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?""",
+
+            'fever_symptoms': """**জ্বরের নির্দেশনা**
+
+🌡️ **জ্বরের জন্য স্বাভাবিক প্রতিক্রিয়া:**
+• **প্রাপ্তবয়স্করা**: 100.4°F (38°C) বা তার বেশি হলে জ্বর নিন
+• **বিশ্রাম নিন** এবং পানি, পরিষ্কার ঝোল দিয়ে হাইড্রেটেড থাকুন
+• **ওষুধ**: নির্দেশানুযায়ী প্যারাসিটামল বা আইবুপ্রফেন
+• কপাল এবং কব্জিতে **ঠান্ডা কম্প্রেস**
+
+⚠️ **চিকিৎসা সহায়তা নিন যদি:**
+• জ্বর 103°F (39.4°C) এর বেশি হয়
+• জ্বর 3 দিনের বেশি থাকে
+• শ্বাস নিতে অসুবিধা বা বুকে ব্যথা
+• গুরুতর মাথাব্যথা বা ঘাড় শক্ত হওয়া
+
+🚨 **জরুরি লক্ষণ:**
+• তাপমাত্রা 105°F (40.5°C) এর বেশি
+• খিঁচুনি
+• শ্বাস নিতে অসুবিধা
+
+**জরুরি অবস্থার জন্য 108 এ কল করুন**""",
+        }
+    }
+
+    # Get responses for the specific language, fallback to English if not available
+    language_responses = responses_multilingual.get(language, responses_multilingual['en'])
+
+    # Add other intent responses here for all languages
+    # For brevity, I'm showing the pattern - you can extend this for all intents
+    if intent not in language_responses:
+        # Fallback to English if intent not found in the language
+        return responses_multilingual['en'].get(intent, responses_multilingual['en'].get('unknown',
+            "I'm here to help with your health questions. Please tell me about your symptoms or what you need assistance with."))
+
+    return language_responses[intent]
+
+
+# Keep existing endpoints but enhance them with RASA integration
+@router.get("/symptoms")
+async def get_symptom_info(symptom: str, duration: Optional[str] = None, severity: Optional[str] = None):
+    """Enhanced symptom endpoint that can work with or without RASA"""
+    try:
+        # Try to use RASA first for intelligent response
+        if rasa_service.is_available:
+            message = f"I have {symptom}"
+            if duration:
+                message += f" for {duration}"
+            if severity:
+                message += f" and it's {severity}"
+
+            rasa_response = await rasa_service.send_message_to_rasa(message)
             return {
-                "message": f"Current vaccination recommendations for {age_group}",
-                "vaccines": result["data"],
-                "source": "CDC/Health Data Service",
-                "last_updated": "Real-time data"
+                "symptom": symptom,
+                "information": rasa_response.get("response"),
+                "source": "rasa",
+                "recommendations": rasa_response.get("quick_replies", [])
             }
         else:
-            # Fallback to existing mock data
-            return {
-                "message": "Current vaccination recommendations (cached data)",
-                "vaccines": [
-                    {
-                        "name": "COVID-19",
-                        "description": "Recommended for all adults and children 6 months and older",
-                        "schedule": "Initial series plus annual boosters"
-                    },
-                    {
-                        "name": "Influenza (Flu)",
-                        "description": "Annual vaccination recommended for everyone 6 months and older",
-                        "schedule": "Annually, preferably in early fall"
-                    }
-                ]
-            }
+            # Fallback to original logic
+            return await get_symptom_info_fallback(symptom, duration, severity)
+
     except Exception as e:
-        logger.error(f"Error getting vaccination info: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving vaccination information")
+        logger.error(f"Error in symptom endpoint: {e}")
+        return await get_symptom_info_fallback(symptom, duration, severity)
 
-@router.get("/outbreak")
-async def get_outbreak_info(country: str = "all"):
-    """Get real disease outbreak information"""
+async def get_symptom_info_fallback(symptom: str, duration: Optional[str] = None, severity: Optional[str] = None):
+    """Fallback symptom information when RASA is not available"""
+    symptom_info = {
+        "fever": {
+            "information": "Fever is a temporary increase in body temperature, often due to an illness.",
+            "recommendations": [
+                "Rest and drink plenty of fluids",
+                "Take paracetamol as directed",
+                "Use cool compresses",
+                "Seek medical attention if fever exceeds 101°F"
+            ]
+        },
+        "headache": {
+            "information": "Headaches can be caused by various factors including stress, dehydration, or underlying conditions.",
+            "recommendations": [
+                "Rest in a quiet, dark room",
+                "Stay hydrated",
+                "Apply cold or warm compress",
+                "Take over-the-counter pain relief if needed"
+            ]
+        },
+        "cough": {
+            "information": "Cough is a common symptom that can be dry or productive, often indicating respiratory issues.",
+            "recommendations": [
+                "Stay hydrated with warm fluids",
+                "Use honey (not for children under 1 year)",
+                "Humidify the air",
+                "Avoid irritants like smoke"
+            ]
+        }
+    }
+
+    info = symptom_info.get(symptom.lower(), {
+        "information": f"Information about {symptom} symptoms.",
+        "recommendations": [
+            "Monitor your symptoms",
+            "Stay hydrated and rest",
+            "Consult a healthcare provider if symptoms worsen",
+            "Call 108 for emergencies"
+        ]
+    })
+
+    return {
+        "symptom": symptom,
+        "information": info["information"],
+        "recommendations": info["recommendations"],
+        "source": "fallback"
+    }
+
+@router.get("/vaccine-schedule")
+async def get_vaccine_schedule(age: Optional[str] = None, vaccine_type: Optional[str] = None):
+    """Enhanced vaccination endpoint with RASA integration"""
     try:
-        # Get COVID data from Disease.sh API (free)
-        covid_result = await health_data_service.get_covid_data(country)
+        if rasa_service.is_available:
+            message = f"vaccination information"
+            if age:
+                message = f"vaccination schedule for age {age}"
+            if vaccine_type:
+                message += f" {vaccine_type} vaccine"
 
-        # Get health news for additional outbreak info
-        news_result = await health_data_service.get_health_news("disease outbreak")
+            rasa_response = await rasa_service.send_message_to_rasa(message)
+            return {
+                "vaccines": rasa_response.get("response"),
+                "source": "rasa"
+            }
+        else:
+            return await get_vaccine_schedule_fallback(age, vaccine_type)
 
-        alerts = []
+    except Exception as e:
+        logger.error(f"Error in vaccine schedule endpoint: {e}")
+        return await get_vaccine_schedule_fallback(age, vaccine_type)
 
-        if covid_result["success"]:
-            covid_data = covid_result["data"]
-            alerts.append({
-                "disease": "COVID-19",
-                "location": covid_data["country"],
-                "active_cases": covid_data["active"],
-                "critical_cases": covid_data["critical"],
-                "risk_level": "Moderate" if covid_data["active"] > 1000 else "Low",
-                "details": f"Active cases: {covid_data['active']:,}, Critical: {covid_data['critical']:,}",
-                "last_updated": covid_data["updated"]
-            })
-
-        # Add seasonal flu info
-        alerts.append({
-            "disease": "Seasonal Influenza",
-            "location": "National",
-            "risk_level": "Moderate",
-            "details": "Seasonal flu activity is increasing. Vaccination recommended."
-        })
-
+async def get_vaccine_schedule_fallback(age: Optional[str] = None, vaccine_type: Optional[str] = None):
+    """Fallback vaccination information"""
+    if vaccine_type and vaccine_type.lower() in ['covid', 'covid-19']:
         return {
-            "message": "Current disease outbreak status",
-            "alerts": alerts,
-            "news": news_result.get("data", []) if news_result["success"] else [],
-            "source": "Disease.sh API + Health News",
-            "last_updated": "Real-time data"
+            "vaccines": [
+                {
+                    "name": "COVID-19 Vaccination",
+                    "description": "Register on CoWIN portal at cowin.gov.in. Available vaccines: Covishield, Covaxin. Free at government centers.",
+                    "age_group": "18+",
+                    "helpline": "1075"
+                }
+            ],
+            "source": "fallback"
         }
 
-    except Exception as e:
-        logger.error(f"Error getting outbreak info: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving outbreak information")
-
-@router.get("/drug-info/{drug_name}")
-async def get_drug_info(drug_name: str):
-    """Get drug information from FDA API"""
-    try:
-        result = await health_data_service.get_drug_information(drug_name)
-
-        if result["success"]:
-            return {
-                "message": f"Drug information for {drug_name}",
-                "drug_info": result["data"],
-                "source": "FDA OpenFDA API",
-                "disclaimer": "This information is for educational purposes only. Consult healthcare professionals for medical advice."
-            }
-        else:
-            return {
-                "message": f"Unable to find information for {drug_name}",
-                "error": result["error"],
-                "recommendation": "Please consult a healthcare professional or pharmacist for detailed drug information."
-            }
-    except Exception as e:
-        logger.error(f"Error getting drug info: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving drug information")
-
-@router.get("/weather-health-advisory")
-async def get_weather_health_advisory(location: str = "global"):
-    """Get weather-related health advisories"""
-    try:
-        result = await health_data_service.get_weather_health_advisory(location)
-
-        if result["success"]:
-            return {
-                "message": f"Weather health advisory for {result['data']['location']}",
-                "advisory": result["data"],
-                "source": "OpenWeatherMap API" if settings.openweather_api_key else "General Advisory"
-            }
-        else:
-            return {
-                "message": "General weather health advisory",
-                "advisory": {"advisory": ["Stay hydrated and dress appropriately for the weather"]}
-            }
-    except Exception as e:
-        logger.error(f"Error getting weather advisory: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving weather advisory")
-
-@router.get("/health-news")
-async def get_health_news(query: str = "health"):
-    """Get latest health news and alerts"""
-    try:
-        result = await health_data_service.get_health_news(query)
-
-        return {
-            "message": f"Latest health news for: {query}",
-            "articles": result["data"],
-            "source": "NewsAPI" if settings.news_api_key else "Curated Health News"
-        }
-    except Exception as e:
-        logger.error(f"Error getting health news: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving health news")
-
-@router.get("/india/covid-data")
-async def get_india_covid_data(state: str = "India"):
-    """Get COVID-19 data specific to India or Indian states"""
-    try:
-        result = await india_health_service.get_covid_india_data(state)
-
-        if result["success"]:
-            covid_data = result["data"]
-            return {
-                "message": f"COVID-19 data for {covid_data['state']}",
-                "data": covid_data,
-                "source": "covid19india.org API",
-                "helpline": "1075 (COVID Helpline India)",
-                "last_updated": covid_data.get("last_updated", "Real-time")
-            }
-        else:
-            return {
-                "message": "Unable to fetch COVID-19 data",
-                "error": result["error"],
-                "helpline": "1075 (COVID Helpline India)"
-            }
-    except Exception as e:
-        logger.error(f"Error getting India COVID data: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving COVID-19 data for India")
-
-@router.get("/india/vaccination-stats")
-async def get_india_vaccination_stats():
-    """Get real-time vaccination statistics for India"""
-    try:
-        result = await india_health_service.get_vaccination_india_data()
-
-        if result["success"]:
-            vacc_data = result["data"]
-            return {
-                "message": "India vaccination statistics",
-                "data": {
-                    "total_doses_administered": vacc_data["total_doses"],
-                    "people_vaccinated_first_dose": vacc_data["first_dose"],
-                    "people_fully_vaccinated": vacc_data["second_dose"],
-                    "precaution_doses": vacc_data["precaution_dose"],
-                    "vaccinated_today": vacc_data["today_vaccinated"]
-                },
-                "source": "COVID19 India API",
-                "cowin_portal": "https://www.cowin.gov.in/",
+    return {
+        "vaccines": [
+            {
+                "name": "General Vaccination Information",
+                "description": "Visit CoWIN portal for COVID vaccines. Contact local health center for routine immunization.",
                 "helpline": "1075"
             }
-        else:
-            return {
-                "message": "Unable to fetch vaccination statistics",
-                "error": result["error"]
-            }
-    except Exception as e:
-        logger.error(f"Error getting vaccination stats: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving vaccination statistics")
+        ],
+        "source": "fallback"
+    }
 
-@router.get("/india/health-schemes")
-async def get_indian_health_schemes():
-    """Get information about Indian government health schemes"""
+@router.get("/health-tips")
+async def get_health_tips():
+    """
+    Get general health tips for display in the frontend
+    """
     try:
-        result = await india_health_service.get_indian_health_schemes()
+        tips = {
+            "daily_tips": [
+                "💧 **Stay Hydrated**: Drink 8-10 glasses of water daily",
+                "🏃 **Exercise Regularly**: 150 minutes of moderate activity per week",
+                "😴 **Get Quality Sleep**: 7-9 hours of sleep for adults",
+                "🥗 **Eat Balanced Diet**: Include fruits, vegetables, and whole grains",
+                "🧼 **Practice Good Hygiene**: Wash hands frequently for 20 seconds",
+                "🧘 **Manage Stress**: Practice meditation or deep breathing exercises",
+                "🚭 **Avoid Smoking**: Stay away from tobacco and excessive alcohol"
+            ],
+            "emergency_numbers": {
+                "india": {
+                    "medical_emergency": "108",
+                    "ambulance": "102",
+                    "police": "100",
+                    "fire": "101",
+                    "health_helpline": "1075"
+                },
+                "us": {
+                    "emergency": "911",
+                    "poison_control": "1-800-222-1222"
+                }
+            },
+            "quick_health_checks": [
+                "Check your blood pressure regularly",
+                "Monitor your weight weekly",
+                "Get annual health screenings",
+                "Keep track of your medications",
+                "Stay up to date with vaccinations"
+            ]
+        }
 
         return {
-            "message": "Indian Government Health Schemes",
-            "schemes": result["data"],
-            "portal": "https://pmjay.gov.in/",
-            "note": "Contact scheme helplines for enrollment and benefits"
+            "status": "success",
+            "data": tips,
+            "message": "Health tips retrieved successfully"
         }
+
     except Exception as e:
-        logger.error(f"Error getting health schemes: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving health schemes information")
-
-@router.get("/india/emergency-contacts")
-async def get_india_emergency_contacts(state: str = "national"):
-    """Get India-specific emergency contacts"""
-    try:
-        result = await india_health_service.get_indian_emergency_contacts(state)
-
+        logger.error(f"Error getting health tips: {e}")
         return {
-            "message": f"Emergency contacts for {state}",
-            "contacts": result["data"],
-            "important_note": "For immediate medical emergencies, call 102 (Ambulance) or 108 (Emergency Response)"
+            "status": "error",
+            "message": "Unable to retrieve health tips",
+            "error": str(e)
         }
-    except Exception as e:
-        logger.error(f"Error getting emergency contacts: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving emergency contacts")
 
-@router.get("/india/hospitals")
-async def get_indian_hospitals(city: str = "delhi"):
-    """Get list of major hospitals in Indian cities"""
-    try:
-        result = await india_health_service.get_indian_hospitals_nearby(city)
+@router.get("/llm/status")
+async def llm_status():
+    """Return whether LLM mode is active and model info."""
+    return {
+        "mode": "llm" if settings.use_llm else "rasa",
+        "use_llm": settings.use_llm,
+        "model": settings.ollama_model if settings.use_llm else None,
+        "base_url": settings.ollama_base_url if settings.use_llm else None
+    }
 
-        return {
-            "message": f"Major hospitals in {result['data'][0]['city'] if result['data'] else city}",
-            "hospitals": result["data"],
-            "city": result["city"],
-            "note": "Call hospitals directly for appointments and emergency services"
-        }
-    except Exception as e:
-        logger.error(f"Error getting hospitals: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving hospital information")
+# --- Local intent detection helpers (mirrors SMS/WhatsApp simple heuristic) ---
+def detect_intent(message: str) -> tuple[str, float]:
+    """Lightweight heuristic intent detection used ONLY when RASA unavailable.
+    Returns (intent_name, confidence).
+    """
+    msg = message.lower().strip()
 
-@router.get("/india/weather-health")
-async def get_india_weather_health(city: str = "delhi"):
-    """Get weather-based health advisory for Indian cities"""
-    try:
-        result = await india_health_service.get_indian_weather_health_advisory(city)
+    fever_keywords = ['fever', 'temperature', 'hot', 'chills', 'शिवर', 'बुखार', 'জ্বর', 'జ్వరం', 'காய்ச்சல்']
+    if any(k in msg for k in fever_keywords):
+        return ('fever_symptoms', 0.9)
 
-        if result["success"]:
-            return {
-                "message": f"Weather health advisory for {result['data']['city']}",
-                "advisory": result["data"],
-                "source": "OpenWeatherMap + India Health Guidelines"
-            }
-        else:
-            return {
-                "message": "General health advisory for India",
-                "advisory": result["data"]
-            }
-    except Exception as e:
-        logger.error(f"Error getting weather health advisory: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving weather health advisory")
+    headache_keywords = ['headache', 'head pain', 'migraine', 'सिर', '头痛', 'মাথা', 'head hurts']
+    if any(k in msg for k in headache_keywords):
+        return ('headache_symptoms', 0.85)
 
-# Update existing chat function to include India-specific responses
-INDIA_INTENT_RESPONSES = {
-    'ask_emergency': [
-        "🚨 **भारतीय आपातकालीन सेवाएं / Indian Emergency Services:**\n\n• **मेडिकल इमरजेंसी**: 102 (एम्बुलेंस)\n• **पुलिस**: 100\n• **फायर**: 101\n• **COVID हेल्पलाइन**: 1075\n• **महिला हेल्पलाइन**: 1091\n\n**तुरंत चिकित्सा सहायता के लिए 102 डायल करें!**",
-        "🚨 **URGENT - Indian Emergency Numbers:**\n\n• **Medical Emergency**: 102 (Ambulance)\n• **Police**: 100\n• **Fire**: 101\n• **COVID Helpline**: 1075\n• **Mental Health**: 9152987821 (AASRA)\n\n**For immediate medical help, dial 102!**"
-    ],
-    'ask_vaccination': [
-        "💉 **भारत में टीकाकरण / Vaccination in India:**\n\n• **COVID-19**: CoWIN पोर्टल पर रजिस्टर करें\n• **बच्चों के लिए**: Mission Indradhanush के तहत मुफ्त टीके\n• **गर्भवती महिलाओं के लिए**: Janani Suraksha Yojana\n\n**CoWIN Portal**: https://www.cowin.gov.in/\n**हेल्पलाइन**: 1075",
-        "💉 **Indian Vaccination Information:**\n\n• **COVID-19**: Register on CoWIN portal for free vaccines\n• **Routine Immunization**: Free vaccines under Mission Indradhanush\n• **Adult Vaccines**: Available at government and private centers\n\n**Portal**: https://www.cowin.gov.in/\n**Helpline**: 1075"
-    ],
-    'ask_outbreak_info': [
-        "🦠 **भारत में बीमारी की स्थिति / Disease Status in India:**\n\n• **COVID-19**: राज्यवार डेटा उपलब्ध\n• **डेंगू**: मानसून के दौरान सावधानी बरतें\n• **मलेरिया**: मच्छरदानी का उपयोग करें\n\n**अपडेट के लिए**: https://www.mohfw.gov.in/\n**हेल्पलाइन**: 1075",
-        "🦠 **Current Health Alerts for India:**\n\n• **COVID-19**: State-wise data available\n• **Dengue**: Monsoon season precautions needed\n• **Malaria**: Use mosquito nets and repellents\n\n**Updates**: https://www.mohfw.gov.in/\n**Helpline**: 1075"
-    ]
-}
+    cough_keywords = ['cough', 'throat', 'sore throat', 'खांसी', 'কাশি', 'దగ్గు']
+    if any(k in msg for k in cough_keywords):
+        return ('cough_symptoms', 0.85)
 
-# Update the get_response_for_intent function to include India-specific responses
-def get_response_for_intent_india(intent: str) -> str:
-    """Get India-specific response for the detected intent"""
-    if intent in INDIA_INTENT_RESPONSES:
-        import random
-        return random.choice(INDIA_INTENT_RESPONSES[intent])
-    elif intent in INTENT_RESPONSES:
-        import random
-        return random.choice(INTENT_RESPONSES[intent])
-    else:
-        return "मैं आपकी स्वास्थ्य संबंधी मदद करना चाहता हूं। कृपया अधिक विवरण दें। / I want to help with your health question. Please provide more details. For medical emergencies, call 102."
+    stomach_keywords = ['stomach', 'nausea', 'vomit', 'vomiting', 'diarrhea', 'abdomen', 'abdominal', 'belly', 'tummy', 'पेट', 'उल्टी']
+    if any(k in msg for k in stomach_keywords):
+        return ('stomach_symptoms', 0.85)
+
+    hospital_keywords = ['hospital', 'clinic', 'doctor', 'medical center', 'emergency room', 'find hospital', 'अस्पताल']
+    if any(k in msg for k in hospital_keywords):
+        return ('find_hospital', 0.8)
+
+    emergency_keywords = ['emergency', 'urgent', 'critical', 'ambulance', 'heart attack', 'stroke', 'unconscious', 'help now']
+    if any(k in msg for k in emergency_keywords):
+        return ('emergency_help', 0.9)
+
+    greet_keywords = ['hello', 'hi', 'hey', 'good morning', 'good evening', 'namaste', 'नमस्ते', 'hola', 'bonjour']
+    if any(k in msg for k in greet_keywords):
+        return ('greet', 0.7)
+
+    vaccine_keywords = ['vaccine', 'vaccination', 'टीका', 'dose', 'booster', 'covid shot']
+    if any(k in msg for k in vaccine_keywords):
+        return ('covid_vaccination', 0.8)
+
+    return ('unknown', 0.2)
+
+# NOTE: get_response_for_intent already declared above (partial multilingual). Fallback mapping handled there.

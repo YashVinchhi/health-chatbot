@@ -20,3 +20,9 @@ rules:
     steps:
       - intent: ask_emergency
       - action: utter_emergency
+
+  - rule: Handle out of scope
+    steps:
+      - intent: out_of_scope
+      - action: utter_default
+      - action: action_listen

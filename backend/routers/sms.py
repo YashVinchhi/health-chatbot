@@ -3,16 +3,66 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 import logging
 from typing import Dict, Any
-from ..services.health_data_service import health_data_service
-from ..services.india_health_service import india_health_service
-from ..config import settings
-from ..routers.health_api import detect_intent, get_response_for_intent
+from services.health_data_service import health_data_service
+from services.india_health_service import india_health_service
+from services.session_service import session_service
+from config import settings
 from twilio.rest import Client
 from twilio.twiml.messaging_response import MessagingResponse
+import uuid
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Define the functions locally to avoid import issues
+def detect_intent(message: str) -> tuple[str, float]:
+    """Enhanced intent detection for SMS messages"""
+    message_lower = message.lower()
+
+    # Specific symptom analysis
+    fever_keywords = ['fever', 'temperature', 'hot', 'burning up', 'chills', 'shivering']
+    if any(keyword in message_lower for keyword in fever_keywords):
+        return ('fever_symptoms', 0.9)
+
+    headache_keywords = ['headache', 'head pain', 'migraine', 'head hurts', 'head ache']
+    if any(keyword in message_lower for keyword in headache_keywords):
+        return ('headache_symptoms', 0.9)
+
+    cough_keywords = ['cough', 'coughing', 'throat', 'sore throat', 'dry cough', 'wet cough']
+    if any(keyword in message_lower for keyword in cough_keywords):
+        return ('cough_symptoms', 0.9)
+
+    stomach_keywords = ['stomach', 'nausea', 'vomiting', 'diarrhea', 'abdominal', 'belly', 'tummy']
+    if any(keyword in message_lower for keyword in stomach_keywords):
+        return ('stomach_symptoms', 0.9)
+
+    hospital_keywords = ['hospital', 'clinic', 'doctor', 'medical center', 'emergency room', 'find hospital']
+    if any(keyword in message_lower for keyword in hospital_keywords):
+        return ('find_hospital', 0.8)
+
+    emergency_keywords = ['emergency', 'urgent', 'critical', 'ambulance', 'heart attack', 'stroke', 'unconscious']
+    if any(keyword in message_lower for keyword in emergency_keywords):
+        return ('emergency_help', 0.9)
+
+    greeting_keywords = ['hello', 'hi', 'hey', 'good morning', 'good evening', 'namaste', 'start', 'begin']
+    if any(keyword in message_lower for keyword in greeting_keywords):
+        return ('greet', 0.7)
+
+    return ('unknown', 0.3)
+
+def get_response_for_intent(intent: str, language: str = "en") -> str:
+    """Get SMS-friendly responses based on intent"""
+    responses = {
+        'greet': "Hello! I'm your health assistant. How can I help you today?",
+        'fever_symptoms': "FEVER MANAGEMENT: Rest, drink fluids, take paracetamol as directed. See doctor if fever >103°F or lasts >3 days. EMERGENCY: Call 108",
+        'headache_symptoms': "HEADACHE RELIEF: Rest in quiet room, stay hydrated, cold/warm compress. Take OTC pain relief if needed. See doctor for severe headaches.",
+        'emergency_help': "🚨 EMERGENCY: Call 108 (India) NOW for medical emergencies. Medical: 108, Ambulance: 102, Police: 100",
+        'find_hospital': "FIND HOSPITALS: Call 108 for emergency, Google 'hospitals near me', or visit nearest district hospital/PHC.",
+        'unknown': "I help with health questions. Ask about symptoms, hospitals, or emergency help. Reply STOP to opt out."
+    }
+
+    return responses.get(intent, responses['unknown'])
 
 class SMSMessage(BaseModel):
     to: str

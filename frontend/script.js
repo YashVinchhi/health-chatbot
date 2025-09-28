@@ -1,8 +1,14 @@
 // Modern Health Chatbot Class
 class HealthChatbot {
     constructor() {
-        console.log('🚀 HealthChatbot constructor called');
-        this.apiUrl = '/api/health';
+        console.log('🚀 HealthChatbot constructor called - Enhanced Session Memory Mode');
+        // Dynamically determine backend base (prevents hitting static server for API calls)
+        const backendHost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:8000'
+            : window.location.origin; // In production assume same origin reverse proxy
+        this.apiBase = backendHost;
+        this.apiUrl = this.apiBase + '/api/health'; // CHANGED from relative '/api/health'
+        console.log('🔗 Backend API base set to:', this.apiUrl);
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
         this.chatMessages = document.getElementById('chatMessages');
@@ -11,8 +17,11 @@ class HealthChatbot {
         this.isConnected = false;
         this.currentTab = 'chat';
         this.chatHistory = [];
-        this.sessionId = this.generateSessionId();
+        this.sessionId = this.getOrCreateSessionId();
         this.rasaStatus = 'checking';
+        this.currentLanguage = 'en'; // Will be auto-detected
+        this.conversationContext = {}; // Store conversation context
+        this.lastMessageTime = null;
 
         // Debug: Check if required elements exist
         console.log('🔍 Required elements check:', {
@@ -26,12 +35,31 @@ class HealthChatbot {
         this.init();
     }
 
-    generateSessionId() {
-        return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    getOrCreateSessionId() {
+        // Try to get existing session ID from localStorage for session persistence
+        let sessionId = localStorage.getItem('healthbot_session_id');
+
+        // Check if session is still valid (within 24 hours)
+        const sessionCreated = localStorage.getItem('healthbot_session_created');
+        const now = Date.now();
+        const sessionAge = now - parseInt(sessionCreated || '0');
+        const maxSessionAge = 24 * 60 * 60 * 1000; // 24 hours
+
+        if (!sessionId || sessionAge > maxSessionAge) {
+            // Create new session
+            sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('healthbot_session_id', sessionId);
+            localStorage.setItem('healthbot_session_created', now.toString());
+            console.log('🆕 Created new session:', sessionId);
+        } else {
+            console.log('♻️ Using existing session:', sessionId);
+        }
+
+        return sessionId;
     }
 
     async init() {
-        console.log('🔧 Initializing HealthChatbot...');
+        console.log('🔧 Initializing HealthChatbot with RASA integration...');
         try {
             this.setupEventListeners();
             console.log('✅ Event listeners setup completed');
@@ -51,199 +79,432 @@ class HealthChatbot {
             this.loadChatHistory();
             console.log('✅ Chat history loaded');
 
+            // Show welcome message with multilingual support
+            this.showWelcomeMessage();
+
             console.log('🎉 HealthChatbot initialization completed successfully!');
         } catch (error) {
             console.error('❌ HealthChatbot initialization failed:', error);
         }
     }
 
+    showWelcomeMessage() {
+        // Check if we have previous conversation context
+        const hasHistory = this.chatHistory.length > 0;
+
+        let welcomeMessage;
+        if (hasHistory) {
+            welcomeMessage = {
+                response: `👋 **Welcome back to HealthBot AI!**
+
+I remember our previous conversation. I can continue helping you with your health questions in multiple languages:
+
+• **English** - "How is my fever now?"
+• **हिंदी** - "अब मेरा बुखार कैसा है?"  
+• **తెలుగు** - "ఇప్పుడు నా జ్వరం ఎలా ఉంది?"
+• **தமிழ்** - "இப்ப என் காய்ச்சல் எப்படி இருக்கு?"
+• **বাংলা** - "এখন আমার জ্বর কেমন?"
+
+What would you like to know today?`,
+                source: 'system',
+                buttons: [],
+                quick_replies: ['Continue Previous Topic', 'New Health Question', 'Find Hospitals', 'Emergency Help']
+            };
+        } else {
+            welcomeMessage = {
+                response: `👋 **Welcome to HealthBot AI!**
+
+I'm your multilingual health assistant with memory! I can help you in:
+• **English** - "I have fever"
+• **हिंदी** - "मुझे बुखार है"  
+• **తెలుగు** - "నాకు జ్వరం వచ్చింది"
+• **தமிழ்** - "எனக்கு காய்ச்சல் வந்துருச்சு"
+• **বাংলা** - "আমার জ্বর হয়েছে"
+
+🩺 **I can help with:**
+• Symptom analysis & guidance (with memory of previous symptoms)
+• Hospital & doctor finder
+• Vaccination information
+• Medicine information
+• Emergency contacts
+
+**I'll remember our conversation to provide better help!**
+
+**Emergency: Call 108 immediately for medical emergencies**
+
+What can I help you with today?`,
+                source: 'system',
+                buttons: [],
+                quick_replies: ['Find Hospitals', 'Vaccination Info', 'Symptom Checker', 'Emergency Help']
+            };
+        }
+
+        this.displayMessage(welcomeMessage, 'bot');
+    }
+
     async checkRasaStatus() {
         try {
+            console.log('🔍 Checking RASA server status...');
             const response = await fetch(`${this.apiUrl}/rasa/status`);
             const status = await response.json();
-            this.rasaStatus = status.status;
-            this.updateConnectionStatus();
+
+            console.log('📊 RASA Status Response:', status);
+
+            this.rasaStatus = status.status || 'offline';
+            this.updateConnectionStatus(status);
+
+            // Get model information
+            if (this.rasaStatus === 'online') {
+                const modelInfo = await fetch(`${this.apiUrl}/rasa/model/info`);
+                const modelData = await modelInfo.json();
+                console.log('🤖 Model Info:', modelData);
+            }
+
         } catch (error) {
-            console.error('RASA status check failed:', error);
+            console.error('❌ RASA status check failed:', error);
             this.rasaStatus = 'offline';
-            this.updateConnectionStatus();
+            this.updateConnectionStatus({ status: 'offline', error: error.message });
         }
     }
 
-    updateConnectionStatus() {
+    updateConnectionStatus(statusData = {}) {
         const statusElement = document.getElementById('connectionStatus');
         const statusDot = document.querySelector('.status-dot');
 
+        if (!statusElement || !statusDot) return;
+
         if (this.rasaStatus === 'online') {
-            statusElement.textContent = 'RASA Connected';
+            statusElement.innerHTML = `
+                <span>🤖 RASA Connected</span>
+                <small>Multilingual AI Active</small>
+            `;
             statusDot.className = 'status-dot online';
+
+            // Show model information
+            if (statusData.model_file) {
+                statusElement.title = `Model: ${statusData.model_file}\nActions: ${statusData.actions_server ? 'Online' : 'Offline'}`;
+            }
         } else if (this.rasaStatus === 'offline') {
-            statusElement.textContent = 'RASA Offline (Fallback Mode)';
+            statusElement.innerHTML = `
+                <span>🔄 Fallback Mode</span>
+                <small>Basic responses active</small>
+            `;
             statusDot.className = 'status-dot offline';
+            statusElement.title = `RASA offline: ${statusData.error || 'Server unavailable'}`;
         } else {
-            statusElement.textContent = 'Checking RASA...';
+            statusElement.innerHTML = `
+                <span>⏳ Connecting...</span>
+                <small>Checking RASA server</small>
+            `;
             statusDot.className = 'status-dot checking';
         }
     }
 
     setupEventListeners() {
-        // Input events
-        this.messageInput.addEventListener('input', () => {
-            this.sendButton.disabled = !this.messageInput.value.trim();
-            this.updateSuggestions();
-        });
+        console.log('🔧 Setting up event listeners...');
 
-        this.messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        // Message input event listeners
+        if (this.messageInput) {
+            // Enable input immediately
+            this.messageInput.disabled = false;
+
+            // Enable send button when there's text - FIXED
+            this.messageInput.addEventListener('input', (e) => {
+                const hasText = e.target.value.trim().length > 0;
+                this.sendButton.disabled = !hasText;
+
+                // Add visual feedback
+                if (hasText) {
+                    this.sendButton.classList.add('enabled');
+                    this.sendButton.classList.remove('disabled');
+                } else {
+                    this.sendButton.classList.remove('enabled');
+                    this.sendButton.classList.add('disabled');
+                }
+
+                // Update suggestions based on input
+                this.updateSuggestions();
+            });
+
+            // Handle Enter key press - FIXED
+            this.messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const message = this.messageInput.value.trim();
+                    if (message) {
+                        this.sendMessage();
+                    }
+                }
+            });
+
+            // Handle Escape key to clear input
+            this.messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.messageInput.value = '';
+                    this.sendButton.disabled = true;
+                    this.sendButton.classList.remove('enabled');
+                    this.sendButton.classList.add('disabled');
+                }
+            });
+
+            // Focus input after page load
+            setTimeout(() => {
+                this.messageInput.focus();
+            }, 500);
+        }
+
+        // Send button click - FIXED
+        if (this.sendButton) {
+            this.sendButton.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.sendMessage();
-            }
-        });
+                const message = this.messageInput.value.trim();
+                if (message && !this.sendButton.disabled) {
+                    this.sendMessage();
+                }
+            });
+        }
 
-        // Enhanced keyboard shortcuts for quick actions
-        document.addEventListener('keydown', (e) => {
-            // Only trigger if not typing in input
-            if (document.activeElement !== this.messageInput && e.ctrlKey) {
-                switch(e.key) {
-                    case '1':
-                        e.preventDefault();
-                        this.handleQuickAction('symptoms');
-                        break;
-                    case '2':
-                        e.preventDefault();
-                        this.handleQuickAction('vaccines');
-                        break;
-                    case '3':
-                        e.preventDefault();
-                        this.handleQuickAction('alerts');
-                        break;
-                    case '4':
-                        e.preventDefault();
-                        this.handleQuickAction('emergency');
-                        break;
-                    case '5':
-                        e.preventDefault();
-                        this.handleQuickAction('tips');
-                        break;
-                    case '6':
-                        e.preventDefault();
-                        this.handleQuickAction('hospitals');
-                        break;
+        // Language detection for better UX
+        if (this.messageInput) {
+            this.messageInput.addEventListener('input', (e) => {
+                this.detectLanguage(e.target.value);
+            });
+        }
+
+        // Scroll behavior for chat messages - FIXED
+        if (this.chatMessages) {
+            this.chatMessages.addEventListener('scroll', () => {
+                this.handleScroll();
+            });
+        }
+
+        // Quick reply buttons (will be added dynamically) - FIXED
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('quick-reply-btn')) {
+                e.preventDefault();
+                const messageText = e.target.textContent.trim();
+                if (messageText) {
+                    this.sendMessage(messageText);
                 }
             }
         });
 
-        this.sendButton.addEventListener('click', () => this.sendMessage());
-
-        // Chat messages scroll event for scroll button
-        this.chatMessages.addEventListener('scroll', () => {
-            this.handleScroll();
-        });
-
-        // Theme detection
-        this.detectSystemTheme();
-
-        // Mobile responsive
-        this.handleMobileView();
-
-        // Setup all button event listeners
-        this.setupButtonListeners();
-
-        // Add quick action help tooltip
-        this.addQuickActionHelp();
-    }
-
-    setupButtonListeners() {
-        // Clear chat button
-        const clearBtn = document.querySelector('[onclick="clearChat()"]');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.clearChat();
-            });
-        }
-
-        // Theme toggle button
-        const themeBtn = document.querySelector('[onclick="toggleTheme()"]');
-        if (themeBtn) {
-            themeBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleTheme();
-            });
-        }
-
-        // Export chat button
-        const exportBtn = document.querySelector('[onclick="exportChat()"]');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.exportChat();
-            });
-        }
-
-        // Quick action buttons
-        document.querySelectorAll('[onclick^="sendQuickMessage"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const message = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-                this.sendQuickMessage(message);
-            });
-        });
-
-        // Navigation buttons
-        document.querySelectorAll('[onclick^="setActiveTab"]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const tabName = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-                this.setActiveTab(tabName);
-            });
-        });
-
-        // Sidebar toggle
-        const sidebarToggle = document.querySelector('[onclick="toggleSidebar()"]');
-        if (sidebarToggle) {
-            sidebarToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleSidebar();
-            });
-        }
-
-        // Settings toggle
-        const settingsBtn = document.querySelector('[onclick="toggleSettings()"]');
-        if (settingsBtn) {
-            settingsBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleSettings();
-            });
-        }
-
-        // Voice input button
-        const voiceBtn = document.querySelector('[onclick="startVoiceInput()"]');
-        if (voiceBtn) {
-            voiceBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.startVoiceInput();
-            });
-        }
-
-        // Quick actions collapse
-        const collapseBtn = document.querySelector('[onclick="toggleQuickActions()"]');
-        if (collapseBtn) {
-            collapseBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.toggleQuickActions();
-            });
-        }
-
-        // Scroll to bottom button
-        const scrollBtn = document.getElementById('scrollToBottom');
-        if (scrollBtn) {
-            scrollBtn.addEventListener('click', (e) => {
+        // Handle scroll to bottom button - FIXED
+        const scrollButton = document.getElementById('scrollToBottom');
+        if (scrollButton) {
+            scrollButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.scrollToBottom();
             });
         }
+
+        // Prevent form submission on Enter in input fields
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                e.preventDefault();
+            }
+        });
     }
+
+    detectLanguage(text) {
+        // Simple language detection based on script
+        if (/[\u0900-\u097F]/.test(text)) {
+            this.currentLanguage = 'hi'; // Hindi
+        } else if (/[\u0C00-\u0C7F]/.test(text)) {
+            this.currentLanguage = 'te'; // Telugu
+        } else if (/[\u0B80-\u0BFF]/.test(text)) {
+            this.currentLanguage = 'ta'; // Tamil
+        } else if (/[\u0980-\u09FF]/.test(text)) {
+            this.currentLanguage = 'bn'; // Bengali
+        } else {
+            this.currentLanguage = 'en'; // English
+        }
+    }
+
+    async sendMessage(messageText = null) {
+        const message = messageText || this.messageInput.value.trim();
+        if (!message) return;
+
+        console.log(`📤 Sending message: "${message}" (Language: ${this.currentLanguage})`);
+
+        // Clear input and disable send button
+        this.messageInput.value = '';
+        this.sendButton.disabled = true;
+
+        // Display user message
+        this.displayMessage({ response: message, source: 'user' }, 'user');
+
+        // Show typing indicator
+        this.showTypingIndicator();
+
+        try {
+            // Send to enhanced RASA-integrated backend
+            const response = await fetch(`${this.apiUrl}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: this.sessionId,
+                    sender: 'user'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('📥 Received response:', data);
+
+            this.hideTypingIndicator();
+            this.displayMessage(data, 'bot');
+
+            // Store in chat history
+            this.chatHistory.push(
+                { message, sender: 'user', timestamp: new Date().toISOString() },
+                { message: data.response, sender: 'bot', timestamp: data.timestamp, source: data.source }
+            );
+
+            this.saveChatHistory();
+
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            this.hideTypingIndicator();
+
+            // Show error message
+            this.displayMessage({
+                response: "I'm experiencing some technical difficulties. For medical emergencies, please call 108 immediately.",
+                source: 'error',
+                quick_replies: ['Try Again', 'Emergency: 108', 'Contact Support']
+            }, 'bot');
+        }
+    }
+
+    displayMessage(messageData, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}`;
+
+        let sourceIndicator = '';
+        if (sender === 'bot') {
+            switch (messageData.source) {
+                case 'rasa':
+                    sourceIndicator = '<span class="source-indicator rasa">🤖 AI</span>';
+                    break;
+                case 'fallback':
+                case 'fallback_connection':
+                case 'fallback_timeout':
+                    sourceIndicator = '<span class="source-indicator fallback">⚡ Fallback</span>';
+                    break;
+                case 'error':
+                    sourceIndicator = '<span class="source-indicator error">⚠️ Error</span>';
+                    break;
+                default:
+                    sourceIndicator = '<span class="source-indicator system">📋 System</span>';
+            }
+        }
+
+        // Enhanced message formatting with markdown-like support
+        let formattedResponse = this.formatMessage(messageData.response || messageData.message || '');
+
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${sourceIndicator}
+                <div class="message-text">${formattedResponse}</div>
+                ${messageData.buttons ? this.createButtons(messageData.buttons) : ''}
+                ${messageData.quick_replies ? this.createQuickReplies(messageData.quick_replies) : ''}
+                <div class="message-time">${this.formatTime(messageData.timestamp)}</div>
+            </div>
+        `;
+
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+
+        // Add intent and confidence info for debugging (only in development)
+        if (messageData.intent && messageData.confidence !== undefined && window.location.hostname === 'localhost') {
+            const debugInfo = document.createElement('div');
+            debugInfo.className = 'debug-info';
+            debugInfo.innerHTML = `
+                <small>Intent: ${messageData.intent} (${(messageData.confidence * 100).toFixed(1)}%)</small>
+            `;
+            messageDiv.appendChild(debugInfo);
+        }
+    }
+
+    formatMessage(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+            .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+            .replace(/^• (.*$)/gm, '<li>$1</li>') // Bullet points
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>') // Wrap bullets in ul
+            .replace(/\n/g, '<br>') // Line breaks
+            .replace(/🚨 \*\*URGENT:\*\*/g, '<span class="urgent">🚨 <strong>URGENT:</strong></span>') // Urgent styling
+            .replace(/(\d{3})/g, '<span class="phone-number">$1</span>'); // Phone number styling
+    }
+
+    createButtons(buttons) {
+        if (!buttons || buttons.length === 0) return '';
+
+        return `
+            <div class="message-buttons">
+                ${buttons.map(button => `
+                    <button class="message-btn" onclick="healthChatbot.sendMessage('${button.payload || button.title}')">
+                        ${button.title}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    createQuickReplies(quickReplies) {
+        if (!quickReplies || quickReplies.length === 0) return '';
+
+        return `
+            <div class="quick-replies">
+                <div class="quick-replies-label">Quick actions:</div>
+                ${quickReplies.map(reply => `
+                    <button class="quick-reply-btn" onclick="healthChatbot.sendMessage('${reply}')">
+                        ${reply}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    showTypingIndicator() {
+        if (this.typingIndicator) {
+            this.typingIndicator.style.display = 'flex';
+            this.scrollToBottomSafely();
+        }
+    }
+
+    hideTypingIndicator() {
+        if (this.typingIndicator) {
+            this.typingIndicator.style.display = 'none';
+        }
+    }
+
+    scrollToBottomSafely() {
+        if (this.chatMessages) {
+            // Use requestAnimationFrame for smoother scrolling
+            requestAnimationFrame(() => {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            });
+        }
+    }
+
+    // Remove the duplicate scrollToBottom method and use only this one
+    scrollToBottom() {
+        this.scrollToBottomSafely();
+    }
+
 
     async checkConnection() {
         try {
@@ -295,335 +556,6 @@ class HealthChatbot {
     enableInput() {
         this.messageInput.disabled = false;
         this.messageInput.focus();
-    }
-
-    showTypingIndicator() {
-        this.typingIndicator.style.display = 'flex';
-        this.scrollToBottom();
-    }
-
-    hideTypingIndicator() {
-        this.typingIndicator.style.display = 'none';
-    }
-
-    async sendMessage() {
-        const message = this.messageInput.value.trim();
-        if (!message) return;
-
-        // Add user message to chat
-        this.addMessage(message, 'user');
-        this.messageInput.value = '';
-        this.sendButton.disabled = true;
-
-        // Show typing indicator
-        this.showTyping();
-
-        try {
-            // Send to RASA-powered backend
-            const response = await fetch(`${this.apiUrl}/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: message,
-                    sender: 'user',
-                    session_id: this.sessionId
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-
-            // Hide typing indicator
-            this.hideTyping();
-
-            // Add bot response with enhanced formatting
-            this.addBotMessage(data);
-
-            // Save to chat history
-            this.chatHistory.push({
-                user: message,
-                bot: data.response,
-                timestamp: new Date().toISOString(),
-                source: data.source
-            });
-
-            this.saveChatHistory();
-
-        } catch (error) {
-            console.error('Error sending message:', error);
-            this.hideTyping();
-
-            // Fallback response
-            this.addMessage(
-                "I'm having trouble connecting to the server. Please check your connection and try again. For medical emergencies, please call your local emergency number immediately.",
-                'bot'
-            );
-        }
-    }
-
-    addBotMessage(data) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message bot-message';
-
-        const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-        let sourceIndicator = '';
-        if (data.source === 'rasa') {
-            sourceIndicator = '<span class="source-indicator rasa" title="Powered by RASA AI">🤖 RASA</span>';
-        } else if (data.source === 'fallback') {
-            sourceIndicator = '<span class="source-indicator fallback" title="Fallback response">⚡ Fallback</span>';
-        }
-
-        messageDiv.innerHTML = `
-            <div class="message-avatar">
-                <i class="fas fa-robot"></i>
-            </div>
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="sender-name">HealthBot AI</span>
-                    <span class="message-time">${timestamp}</span>
-                    ${sourceIndicator}
-                </div>
-                <div class="message-text">
-                    ${this.formatBotResponse(data.response)}
-                </div>
-                ${this.renderButtons(data.buttons)}
-                ${this.renderQuickReplies(data.quick_replies)}
-            </div>
-        `;
-
-        this.chatMessages.appendChild(messageDiv);
-        this.scrollToBottom();
-    }
-
-    formatBotResponse(text) {
-        // Enhanced text formatting for better readability
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold text
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Italic text
-            .replace(/`(.*?)`/g, '<code>$1</code>')            // Inline code
-            .replace(/\n/g, '<br>')                            // Line breaks
-            .replace(/•/g, '•')                                // Bullet points
-            .replace(/🚨/g, '<span class="emergency-icon">🚨</span>')  // Emergency icons
-            .replace(/💉/g, '<span class="vaccine-icon">💉</span>')    // Vaccine icons
-            .replace(/🏥/g, '<span class="hospital-icon">🏥</span>')   // Hospital icons;
-    }
-
-    renderButtons(buttons) {
-        if (!buttons || buttons.length === 0) return '';
-
-        const buttonsHtml = buttons.map(button =>
-            `<button class="response-button" onclick="window.chatbot.handleButtonClick('${button.payload}', '${button.title}')">
-                ${button.title}
-            </button>`
-        ).join('');
-
-        return `<div class="response-buttons">${buttonsHtml}</div>`;
-    }
-
-    renderQuickReplies(quickReplies) {
-        if (!quickReplies || quickReplies.length === 0) return '';
-
-        const repliesHtml = quickReplies.map(reply =>
-            `<span class="quick-reply" onclick="window.chatbot.sendQuickReply('${reply}')">
-                ${reply}
-            </span>`
-        ).join('');
-
-        return `<div class="quick-replies">${repliesHtml}</div>`;
-    }
-
-    handleButtonClick(payload, title) {
-        // Handle button clicks from RASA responses
-        this.messageInput.value = payload;
-        this.sendMessage();
-    }
-
-    sendQuickReply(reply) {
-        // Handle quick reply clicks
-        this.messageInput.value = reply;
-        this.sendMessage();
-    }
-
-    addMessage(text, sender, intent = null, confidence = null) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-
-        // Determine message type for styling
-        if (intent === 'ask_emergency' || text.includes('🚨')) {
-            messageDiv.classList.add('emergency-message');
-        } else if (intent === 'error') {
-            messageDiv.classList.add('error-message');
-        } else if (intent && confidence && confidence > 0.8) {
-            messageDiv.classList.add('success-message');
-        }
-
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
-
-        const content = document.createElement('div');
-        content.className = 'message-content';
-
-        // Add message header for better UX
-        const header = document.createElement('div');
-        header.className = 'message-header';
-        header.innerHTML = `
-            <span class="sender-name">${sender === 'user' ? 'You' : 'HealthBot AI'}</span>
-            <span class="message-time">${this.getCurrentTime()}</span>
-        `;
-
-        const messageText = document.createElement('div');
-        messageText.className = 'message-text';
-        messageText.innerHTML = this.formatMessage(text);
-
-        content.appendChild(header);
-        content.appendChild(messageText);
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(content);
-
-        // Add to chat and scroll
-        this.chatMessages.appendChild(messageDiv);
-
-        // Check if user is near bottom before auto-scrolling
-        const { scrollTop, scrollHeight, clientHeight } = this.chatMessages;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-
-        if (isNearBottom || sender === 'user') {
-            // Auto-scroll if user is near bottom or if it's user's message
-            this.scrollToBottom();
-        } else {
-            // Show scroll button if user is not at bottom
-            this.showScrollButton();
-        }
-
-        // Store in history
-        this.chatHistory.push({
-            text,
-            sender,
-            intent,
-            confidence,
-            timestamp: new Date().toISOString()
-        });
-
-        // Add entrance animation
-        requestAnimationFrame(() => {
-            messageDiv.style.opacity = '1';
-            messageDiv.style.transform = 'translateY(0)';
-        });
-    }
-
-    formatMessage(text) {
-        // Convert line breaks to <br> tags
-        let formatted = text.replace(/\n/g, '<br>');
-
-        // Convert bullet points to proper HTML lists
-        if (formatted.includes('•')) {
-            const lines = formatted.split('<br>');
-            let inList = false;
-            let result = [];
-
-            for (let line of lines) {
-                if (line.trim().startsWith('•')) {
-                    if (!inList) {
-                        result.push('<ul>');
-                        inList = true;
-                    }
-                    result.push(`<li>${line.replace('•', '').trim()}</li>`);
-                } else {
-                    if (inList) {
-                        result.push('</ul>');
-                        inList = false;
-                    }
-                    if (line.trim()) {
-                        result.push(`<p>${line}</p>`);
-                    }
-                }
-            }
-
-            if (inList) {
-                result.push('</ul>');
-            }
-
-            formatted = result.join('');
-        } else {
-            // Wrap in paragraphs
-            const paragraphs = formatted.split('<br><br>');
-            formatted = paragraphs.map(p => p.trim() ? `<p>${p}</p>` : '').join('');
-        }
-
-        // Format numbers to Indian numbering system
-        formatted = this.formatIndianNumbers(formatted);
-
-        // Make URLs clickable
-        formatted = formatted.replace(
-            /(https?:\/\/[^\s]+)/g,
-            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
-        );
-
-        // Format emergency numbers (but not convert to Indian format)
-        formatted = formatted.replace(
-            /(\d{3}|\d{4})/g,
-            '<strong>$1</strong>'
-        );
-
-        return formatted;
-    }
-
-    // New method to format numbers in Indian numbering system
-    formatIndianNumbers(text) {
-        // Regular expression to match numbers (excluding phone numbers and URLs)
-        const numberRegex = /(?<!\d)[1-9]\d{2,}(?!\.\w)/g;
-
-        return text.replace(numberRegex, (match) => {
-            // Skip if it's likely a phone number, year, or emergency number
-            if (match.length <= 4 || /^(19|20)\d{2}$/.test(match)) {
-                return match;
-            }
-
-            return this.convertToIndianFormat(match);
-        });
-    }
-
-    // Convert number to Indian format (lakhs and crores)
-    convertToIndianFormat(number) {
-        const num = parseInt(number);
-
-        if (num < 1000) {
-            return num.toString();
-        }
-
-        // Convert to Indian numbering system
-        const numStr = num.toString();
-        let result = '';
-        let count = 0;
-
-        // Process from right to left
-        for (let i = numStr.length - 1; i >= 0; i--) {
-            if (count === 3 || (count > 3 && (count - 3) % 2 === 0)) {
-                result = ',' + result;
-            }
-            result = numStr[i] + result;
-            count++;
-        }
-
-        return result;
-    }
-
-    // Add method to format currency in Indian style
-    formatIndianCurrency(amount) {
-        const formatted = this.convertToIndianFormat(amount);
-        return `₹${formatted}`;
-    }
-
-    getCurrentTime() {
-        const now = new Date();
-        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     // Enhanced scroll to bottom with intelligent behavior - auto-hide after scrolling
@@ -1313,13 +1245,6 @@ window.callHospital = function(phoneNumber) {
     }
 };
 
-// Global scroll to bottom function
-window.scrollToBottom = function() {
-    if (window.chatbot) {
-        window.chatbot.scrollToBottom();
-    }
-};
-
 // Global utility functions for Indian number formatting
 window.formatIndianNumber = function(number) {
     if (window.chatbot) {
@@ -1434,4 +1359,3 @@ Try asking about health costs and I'll format numbers in Indian style!`;
         }
     }, 3000);
 });
-

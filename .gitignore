@@ -55,8 +55,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Rasa
-models/
 
 # Temporary files
 *.tmp
@@ -76,3 +74,6 @@ htmlcov/
 
 # mypy
 .mypy_cache/
+/FALLBACK_ISSUE_FIXED.md
+
+

@@ -19,6 +19,15 @@ intents:
   - ask_exercise
   - ask_diet
   - ask_mental_health
+  # New intents added with multilingual support
+  - ask_prevention_tips
+  - ask_medicine_info
+  - ask_hospital_info
+  - ask_health_scheme
+  - emergency_help
+  - thank
+  - out_of_scope
+  # nlu_fallback removed to disable fallback intent
 
 entities:
   - symptom
@@ -29,6 +38,8 @@ entities:
   - duration
   - vaccine_type
   - disease
+  - medicine
+  - scheme
 
 slots:
   user_name:
@@ -58,104 +69,128 @@ slots:
       entity: symptom
 
   severity:
-    type: categorical
-    values:
-    - mild
-    - moderate
-    - severe
+    type: text
     mappings:
     - type: from_entity
       entity: severity
 
+  duration:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: duration
+
+  vaccine_type:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: vaccine_type
+
+  disease:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: disease
+
+  medicine:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: medicine
+
+  scheme:
+    type: text
+    mappings:
+    - type: from_entity
+      entity: scheme
+
 responses:
   utter_greet:
-  - text: "🏥 Namaste! I'm your AI health assistant. How can I help you today?"
-  - text: "Hello! 🩺 I'm here to provide health guidance. What would you like to know?"
-  - text: "Hi there! 👋 Your health companion is ready to assist. How may I help?"
+  - text: "Hello! I'm your health assistant. How can I help you today? 🏥\n\nI can help with:\n• Symptoms and health guidance\n• Vaccination information\n• Hospital locations\n• Medicine information\n• Emergency contacts"
+  - text: "नमस्ते! मैं आपका स्वास्थ्य सहायक हूं। आज मैं आपकी कैसे मदद कर सकता हूं? 🏥"
+  - text: "వనక్కం! నేను మీ ఆరోగ్య సహాయకుడను. నేను మీకు ఎలా సహాయం చేయగలను? 🏥"
 
   utter_goodbye:
-  - text: "Stay healthy! 🌟 Feel free to return anytime for health guidance."
-  - text: "Take care of yourself! 💚 Don't hesitate to ask if you need health advice."
-  - text: "Goodbye! Remember - your health is your wealth. 🏥"
-
-  utter_symptoms_help:
-  - text: "I understand you're experiencing symptoms. Let me help you understand them better. Can you tell me:\n\n• What specific symptoms are you having?\n• How long have you had them?\n• How severe are they (mild/moderate/severe)?\n\n⚠️ **Important**: For severe symptoms or emergencies, please seek immediate medical attention or call emergency services."
-
-  utter_ask_symptom_details:
-  - text: "Can you describe your symptoms in more detail? For example:\n• Fever, headache, cough, nausea\n• Body pain, difficulty breathing\n• Skin issues, digestive problems"
-
-  utter_ask_severity:
-  - text: "How would you rate the severity of your symptoms?\n• **Mild**: Manageable, doesn't interfere much with daily activities\n• **Moderate**: Noticeable discomfort, some impact on activities\n• **Severe**: Significant pain/discomfort, major impact on daily life"
-
-  utter_ask_duration:
-  - text: "How long have you been experiencing these symptoms?\n• A few hours\n• 1-2 days\n• Several days\n• A week or more"
-
-  utter_vaccination_info:
-  - text: "💉 **Vaccination Information for India:**\n\n🦠 **COVID-19**: Free vaccines available at government centers\n• Register on CoWIN portal: https://www.cowin.gov.in/\n• Helpline: 1075\n\n🤧 **Influenza**: Available at private hospitals\n👶 **Childhood**: Free under Mission Indradhanush\n🌍 **Travel**: Consult travel medicine clinics\n\nWhat specific vaccine information do you need?"
-
-  utter_vaccination_covid:
-  - text: "🦠 **COVID-19 Vaccination in India:**\n\n📱 **How to book**: CoWIN portal or Aarogya Setu app\n💉 **Available vaccines**: Covishield, Covaxin, Sputnik V\n🏥 **Where**: Government hospitals, PHCs, private centers\n💰 **Cost**: Free at government centers\n📞 **Helpline**: 1075\n\n**Booster doses** are recommended for adults 60+ and healthcare workers."
-
-  utter_outbreak_info:
-  - text: "🦠 **Current Health Alerts for India:**\n\n• **COVID-19**: {covid_status}\n• **Dengue**: Monsoon season - use mosquito protection\n• **Malaria**: Endemic areas - use bed nets\n• **Chikungunya**: Prevent water stagnation\n\n📱 For real-time updates:\n• MoHFW website: https://www.mohfw.gov.in/\n• Aarogya Setu app\n• Local health department\n\nWhich specific disease information do you need?"
-
-  utter_emergency:
-  - text: "🚨 **भारतीय आपातकालीन सेवाएं / Indian Emergency Services:**\n\n• **मेडिकल इमरजेंसी / Medical Emergency**: 102\n• **एम्बुलेंस / Ambulance**: 108\n• **पुलिस / Police**: 100\n• **फायर / Fire**: 101\n• **COVID हेल्पलाइन / COVID Helpline**: 1075\n• **महिला हेल्पलाइन / Women Helpline**: 1091\n• **चाइल्ड हेल्पलाइन / Child Helpline**: 1098\n\n🏥 **तुरंत चिकित्सा सहायता के लिए 102 या 108 डायल करें!**\n**For immediate medical help, dial 102 or 108!**"
-
-  utter_emergency_symptoms:
-  - text: "🚨 **Seek immediate medical attention if you have:**\n\n• Chest pain or pressure\n• Difficulty breathing or shortness of breath\n• Severe headache with neck stiffness\n• High fever above 103°F (39.4°C)\n• Persistent vomiting\n• Signs of stroke (face drooping, arm weakness, speech difficulty)\n• Severe allergic reactions\n• Uncontrolled bleeding\n\n**डायल करें / Call: 102 (Medical Emergency) or 108 (Ambulance)**"
-
-  utter_general_health:
-  - text: "🌟 **Health Tips for Indians:**\n\n🍛 **Nutrition**: Include dal, sabzi, roti, rice in balanced portions\n🚶 **Exercise**: 30 minutes daily - yoga, walking, or sports\n💧 **Hydration**: 8-10 glasses of water, especially in summer\n😴 **Sleep**: 7-8 hours, avoid late-night screen time\n🧘 **Mental Health**: Practice meditation, pranayama\n🧼 **Hygiene**: Wash hands frequently, especially before meals\n\nWhat specific health topic interests you?"
-
-  utter_general_health_detailed:
-  - text: "🏃 **Detailed Health Guidelines:**\n\n**Daily Routine:**\n• Wake up early (5:30-6:30 AM)\n• Drink warm water with lemon\n• 15-20 minutes morning exercise\n• Balanced breakfast by 8 AM\n\n**Diet Guidelines:**\n• Include seasonal fruits and vegetables\n• Limit processed foods and sugar\n• Use traditional cooking methods\n• Eat dinner by 8 PM\n\n**Preventive Care:**\n• Regular health checkups\n• Blood pressure monitoring\n• Diabetes screening (especially 40+)\n• Eye and dental checkups"
-
-  utter_medication_info:
-  - text: "💊 **Medication Safety Guidelines:**\n\n⚠️ **Important**: I cannot prescribe medications. Always consult:\n• Qualified doctors (MBBS/MD)\n• Licensed pharmacists\n• Government healthcare centers\n\n**General Medication Tips:**\n• Take medicines as prescribed\n• Complete antibiotic courses\n• Store in cool, dry places\n• Check expiry dates\n• Don't share prescription medicines\n\n**For affordable medicines**: Jan Aushadhi stores across India"
-
-  utter_ask_hospitals:
-  - text: "🏥 **Finding Healthcare in India:**\n\n**Government Hospitals:**\n• AIIMS (Delhi, and other cities)\n• State government hospitals\n• Community Health Centers (CHCs)\n• Primary Health Centers (PHCs)\n\n**Private Hospitals:**\n• Apollo, Fortis, Max, Manipal\n• Local nursing homes\n\n**Emergency Services:**\n• Dial 102/108 for ambulance\n• Most hospitals have 24x7 emergency\n\nWhich city are you looking for hospitals in?"
-
-  utter_ask_location:
-  - text: "To provide location-specific health information, could you tell me:\n• Your city or state?\n• Or would you like general information for India?\n\nThis helps me give you relevant healthcare facility information."
-
-  utter_cost_info:
-  - text: "💰 **Healthcare Costs in India:**\n\n**Government Healthcare:**\n• PHCs/CHCs: Free or nominal charges (₹5-50)\n• Government hospitals: Subsidized rates\n• Ayushman Bharat: Up to ₹5 lakh coverage\n\n**Private Healthcare:**\n• Consultation: ₹300-2,000\n• Basic tests: ₹100-1,000\n• Emergency: ₹5,000-50,000+\n\n**Insurance Options:**\n• Ayushman Bharat (for eligible families)\n• Private health insurance\n• Employee State Insurance (ESI)"
-
-  utter_prevention_tips:
-  - text: "🛡️ **Disease Prevention Tips:**\n\n**Infectious Diseases:**\n• Wash hands with soap regularly\n• Use mosquito nets (malaria/dengue)\n• Drink clean, boiled water\n• Get vaccinated as per schedule\n\n**Lifestyle Diseases:**\n• Maintain healthy weight\n• Regular exercise (150 min/week)\n• Limit salt, sugar, oil\n• No smoking, limit alcohol\n• Manage stress\n\n**Seasonal Care:**\n• Monsoon: Avoid street food, waterlogging\n• Summer: Stay hydrated, avoid heat\n• Winter: Warm clothes, vitamin D"
-
-  utter_mental_health:
-  - text: "🧠 **Mental Health Support in India:**\n\n**Free Helplines:**\n• AASRA: 9152987821\n• Vandrevala Foundation: 1860 2662 345\n• iCall: 9152987821\n\n**Warning Signs:**\n• Persistent sadness or anxiety\n• Sleep disturbances\n• Loss of interest in activities\n• Difficulty concentrating\n\n**Self-Care:**\n• Practice meditation/yoga\n• Talk to family/friends\n• Regular exercise\n• Maintain routine\n\n**Professional Help:**\n• Psychiatrists at government hospitals\n• NIMHANS (Bangalore) - national institute\n• Private counselors and therapists"
-
-  utter_iamabot:
-  - text: "I'm HealthBot AI, your intelligent health assistant! 🤖\n\nI can help with:\n• General health information\n• Symptom guidance (not diagnosis)\n• Vaccination schedules\n• Emergency contacts\n• Health tips and prevention\n\n⚠️ **Important**: I provide information only. For medical diagnosis and treatment, always consult qualified healthcare professionals."
-
-  utter_ask_name:
-  - text: "What's your name? I'd like to personalize our conversation! 😊"
-
-  utter_greet_with_name:
-  - text: "Hello {user_name}! Nice to meet you. How can I help with your health today?"
+  - text: "Goodbye! Take care of your health. For emergencies, call 108. 🏥"
+  - text: "अलविदा! अपना ख्याल रखें। आपातकाल के लिए 108 पर कॉल करें। 🏥"
+  - text: "వీడ్కోలు! మీ ఆరోగ్యాన్ని జాగ్రత్తగా చూసుకోండి। అత్యవసర సమయాల్లో 108కి కాల్ చేయండి। 🏥"
 
   utter_default:
-  - text: "I understand you have a health question. Could you please be more specific? For example:\n• 'I have fever'\n• 'Tell me about vaccines'\n• 'I need emergency help'\n• 'Give me health tips'\n\nFor medical emergencies, please call 102 or 108 immediately."
+  - text: "I didn't understand that. I can help with health information, symptoms, vaccinations, and hospital locations. What would you like to know?"
+  - text: "मुझे समझ नहीं आया। मैं स्वास्थ्य जानकारी, लक्षण, टीकाकरण और अस्पताल की जानकारी में मदद कर सकता हूं।"
+  - text: "Could you please rephrase that? I'm here to help with:\n• Health symptoms and advice\n• Hospital and doctor information\n• Vaccination schedules\n• Emergency guidance"
+  - text: "I'm not sure I understand. Try asking me about:\n• 'I have fever'\n• 'Find hospitals near me'\n• 'COVID vaccine info'\n• 'Emergency help'"
+
+  utter_please_rephrase:
+  - text: "I'm sorry, I didn't understand that. Could you please rephrase your question? I'm here to help with health-related queries."
+  - text: "क्षमा करें, मुझे समझ नहीं आया। कृपया अपना प्रश्न दूसरे तरीके से पूछें।"
+
+  utter_emergency:
+  - text: "🚨 EMERGENCY ALERT! 🚨\n\nCall 108 immediately for medical emergency!\n\nEmergency Numbers:\n• Ambulance: 108\n• Police: 100\n• Fire: 101\n\nIf you're having:\n• Chest pain\n• Difficulty breathing\n• Severe bleeding\n• Loss of consciousness\n\nSeek immediate medical attention!"
+  - text: "🚨 आपातकाल! 🚨\n\nतुरंत 108 पर कॉल करें!\n\nआपातकालीन नंबर:\n• एम्बुलेंस: 108\n• पुलिस: 100\n• फायर: 101"
+
+  utter_symptoms_help:
+  - text: "I can help you understand your symptoms. Please describe:\n• What symptoms are you experiencing?\n• How long have you had them?\n• How severe are they (mild/moderate/severe)?\n\n⚠️ For emergency symptoms, call 108 immediately!"
+  - text: "मैं आपके लक्षणों को समझने में मदद कर सकता हूं। कृपया बताएं:\n• आपको कौन से लक्षण हैं?\n• कितने समय से हैं?\n• कितने गंभीर हैं?"
+
+  utter_vaccination_info:
+  - text: "💉 Vaccination Information:\n\n🏥 Where to get vaccinated:\n• Government hospitals\n• PHCs and CHCs\n• Private hospitals\n• CoWIN centers\n\n📋 Required documents:\n• Aadhaar card\n• Voter ID\n• Driving license\n\n📱 Book online: CoWIN portal or Aarogya Setu app"
+  - text: "💉 टीकाकरण की जानकारी:\n\n🏥 टीका कहाँ लगवाएं:\n• सरकारी अस्पताल\n• PHC और CHC\n• निजी अस्पताल\n• CoWIN केंद्र"
+
+  utter_vaccination_covid:
+  - text: "🦠 COVID-19 Vaccination:\n\n💉 Available vaccines:\n• Covishield\n• Covaxin\n• Sputnik V\n• Corbevax\n\n👥 Eligible: 12+ years\n📅 Gap between doses: 84 days\n🆓 Free at government centers\n\n📱 Book: CoWIN portal"
+  - text: "🦠 कोविड-19 टीकाकरण:\n\n💉 उपलब्ध टीके:\n• कोविशील्ड\n• कोवैक्सिन\n• स्पुतनिक V\n• कॉर्बेवैक्स"
+
+  utter_general_health:
+  - text: "🏥 General Health Tips:\n\n✅ Daily habits:\n• Drink 8-10 glasses of water\n• Exercise 30 minutes daily\n• Sleep 7-8 hours\n• Eat balanced diet\n\n🥗 Include:\n• Fruits and vegetables\n• Whole grains\n• Lean proteins\n\n❌ Avoid:\n• Smoking\n• Excessive alcohol\n• Processed foods"
+  - text: "🏥 सामान्य स्वास्थ्य टिप्स:\n\n✅ दैनिक आदतें:\n• 8-10 गिलास पानी पिएं\n• 30 मिनट व्यायाम करें\n• 7-8 घंटे सोएं"
+
+  utter_general_health_detailed:
+  - text: "🏥 Detailed Health Guidelines:\n\n🏃‍♂️ Physical Activity:\n• Walking: 30 min daily\n• Yoga: 15-20 min\n• Strength training: 2-3 times/week\n\n🥗 Nutrition:\n• 5 servings fruits/vegetables\n• Whole grains over refined\n• Limit sugar and salt\n\n🧠 Mental Health:\n• Practice meditation\n• Maintain social connections\n• Manage stress effectively"
+
+  utter_ask_severity:
+  - text: "To better help you, please tell me:\n\n📊 How severe are your symptoms?\n• Mild (manageable, doesn't interfere with daily activities)\n• Moderate (somewhat bothersome, affects some activities)\n• Severe (very bothersome, significantly affects daily life)\n\n⏰ How long have you had these symptoms?"
+  - text: "बेहतर मदद के लिए, कृपया बताएं:\n\n📊 आपके लक्षण कितने गंभीर हैं?\n• हल्के\n• मध्यम\n• गंभीर"
+
+  utter_ask_hospitals:
+  - text: "🏥 I can help you find hospitals. Please tell me:\n\n📍 Your location (city/area)\n🏥 Type of hospital needed:\n• Emergency\n• General\n• Specialty (cardiology, orthopedic, etc.)\n• Government or Private\n\nThis will help me find the best options for you!"
+  - text: "🏥 मैं अस्पताल खोजने में मदद कर सकता हूं। कृपया बताएं:\n\n📍 आपका स्थान\n🏥 अस्पताल का प्रकार"
+
+  utter_outbreak_info:
+  - text: "🦠 Disease Outbreak Information:\n\n📱 Official sources:\n• Ministry of Health & Family Welfare\n• WHO updates\n• State health departments\n\n🚨 Current alerts:\n• Check IDSP (Integrated Disease Surveillance)\n• Local health department notifications\n\n📞 Report suspicious cases to:\n• District health officer\n• Helpline: 1075"
+
+  utter_medication_info:
+  - text: "💊 Medicine Information:\n\n⚠️ Important:\n• Always consult a doctor before taking medicines\n• Check expiry dates\n• Follow prescribed dosage\n• Store medicines properly\n\n🏪 Where to buy:\n• Licensed pharmacies\n• Jan Aushadhi stores (generic medicines)\n• Online pharmacies (with valid prescription)"
+  - text: "💊 दवा की जानकारी:\n\n⚠️ महत्वपूर्ण:\n• दवा लेने से पहले डॉक्टर से सलाह लें\n• एक्सपायरी डेट चेक करें"
+
+  utter_mental_health:
+  - text: "🧠 Mental Health Support:\n\n📞 Helplines:\n• National Mental Health: 1800-599-0019\n• Vandrevala Foundation: 1860-2662-345\n• NIMHANS: 080-46110007\n\n💡 Self-care tips:\n• Practice deep breathing\n• Maintain routine\n• Stay connected with loved ones\n• Seek professional help when needed"
+
+  utter_prevention_tips:
+  - text: "🛡️ Disease Prevention Tips:\n\n✋ Basic hygiene:\n• Wash hands frequently (20 seconds)\n• Use hand sanitizer (60%+ alcohol)\n• Avoid touching face\n• Cover mouth when coughing/sneezing\n\n🏠 At home:\n• Keep surroundings clean\n• Ensure proper ventilation\n• Maintain physical distance when sick"
+
+  utter_iamabot:
+  - text: "I am a health chatbot created to help you with medical information and health guidance. I'm here 24/7 to assist you! 🤖🏥"
+
+  utter_cost_info:
+  - text: "💰 Treatment Cost Information:\n\n🆓 Free services:\n• Government hospitals\n• PHCs and CHCs\n• Ayushman Bharat scheme\n• Jan Aushadhi medicines\n\n💵 Cost factors:\n• Type of treatment\n• Hospital (govt vs private)\n• Insurance coverage\n• Location\n\n📋 Financial assistance:\n• PM-JAY scheme\n• State health schemes\n• Hospital charity funds"
 
 actions:
-  - action_get_vaccination_info
-  - action_get_outbreak_info
-  - action_symptom_analysis
-  - action_find_hospitals
-  - action_get_emergency_contacts
-  - action_provide_health_tips
-  - action_check_medicine_info
-  - validate_name_form
+- action_check_vaccine_schedule
+- action_get_symptom_info
+- action_send_outbreak_alert
+- action_get_prevention_tips
+- action_get_vaccination_info
+- action_get_outbreak_info
+- action_check_health_status
+- action_find_nearest_hospital
+- action_get_medicine_info
+- action_get_emergency_contacts
+- validate_name_form
+- action_symptom_analysis
+- action_find_hospitals
 
 forms:
   name_form:
     required_slots:
       - user_name
-
-session_config:
-  session_expiration_time: 60
-  carry_over_slots_to_new_session: true

@@ -1,0 +1,52 @@
+[
+  {
+    "tag_name": "entity",
+    "ids_to_tags": {
+      "1": "B-disease",
+      "2": "I-disease",
+      "3": "L-disease",
+      "4": "U-disease",
+      "5": "B-location",
+      "6": "I-location",
+      "7": "L-location",
+      "8": "U-location",
+      "9": "B-medicine",
+      "10": "I-medicine",
+      "11": "L-medicine",
+      "12": "U-medicine",
+      "13": "B-symptom",
+      "14": "I-symptom",
+      "15": "L-symptom",
+      "16": "U-symptom",
+      "17": "B-vaccine_type",
+      "18": "I-vaccine_type",
+      "19": "L-vaccine_type",
+      "20": "U-vaccine_type",
+      "0": "O"
+    },
+    "tags_to_ids": {
+      "B-disease": 1,
+      "I-disease": 2,
+      "L-disease": 3,
+      "U-disease": 4,
+      "B-location": 5,
+      "I-location": 6,
+      "L-location": 7,
+      "U-location": 8,
+      "B-medicine": 9,
+      "I-medicine": 10,
+      "L-medicine": 11,
+      "U-medicine": 12,
+      "B-symptom": 13,
+      "I-symptom": 14,
+      "L-symptom": 15,
+      "U-symptom": 16,
+      "B-vaccine_type": 17,
+      "I-vaccine_type": 18,
+      "L-vaccine_type": 19,
+      "U-vaccine_type": 20,
+      "O": 0
+    },
+    "num_tags": 21
+  }
+]

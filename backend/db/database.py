@@ -1,12 +1,10 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import declarative_base, sessionmaker
-from dotenv import load_dotenv
-import os
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 import time
 import logging
-from ..config import settings
-
-load_dotenv()
+from config import settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

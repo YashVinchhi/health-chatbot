@@ -1,6 +1,6 @@
-from sqlalchemy import Boolean, Column, Integer, String, Float, DateTime
+from sqlalchemy import Boolean, Column, Integer, String, Float, DateTime, Text, JSON
 from sqlalchemy.sql import func
-from .database import Base
+from db.database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -32,3 +32,25 @@ class VaccinationReminder(Base):
     vaccine_name = Column(String)
     due_date = Column(DateTime)
     reminded_at = Column(DateTime(timezone=True))
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, unique=True, index=True)
+    user_language = Column(String, default="en")  # Detected user language
+    context = Column(JSON, default={})  # Store conversation context
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, index=True)
+    message = Column(Text)
+    response = Column(Text)
+    intent = Column(String)
+    confidence = Column(Float)
+    language = Column(String)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())

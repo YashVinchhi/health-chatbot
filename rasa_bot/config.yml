@@ -18,9 +18,6 @@ pipeline:
 - name: ResponseSelector
   epochs: 100
   constrain_similarities: true
-- name: FallbackClassifier
-  threshold: 0.3
-  ambiguity_threshold: 0.1
 
 policies:
 - name: MemoizationPolicy
@@ -32,4 +29,5 @@ policies:
   max_history: 5
   epochs: 100
   constrain_similarities: true
+
 assistant_id: 20250925-211147-warm-support

@@ -88,28 +88,43 @@ stories:
     - intent: goodbye
     - action: utter_goodbye
 
-rules:
-  - rule: Say goodbye anytime the user says goodbye
+  - story: exercise guidance
     steps:
-    - intent: goodbye
-    - action: utter_goodbye
+    - intent: ask_exercise
+    - action: utter_general_health_detailed
 
-  - rule: Emergency response
+  - story: diet guidance
     steps:
-    - intent: ask_emergency
+    - intent: ask_diet
+    - action: utter_general_health_detailed
+
+  - story: prevention tips detailed
+    steps:
+    - intent: ask_prevention_tips
+    - action: action_get_prevention_tips
+
+  - story: medicine information
+    steps:
+    - intent: ask_medicine_info
+    - action: action_get_medicine_info
+
+  - story: hospital information
+    steps:
+    - intent: ask_hospital_info
+    - action: action_find_nearest_hospital
+
+  - story: health scheme information
+    steps:
+    - intent: ask_health_scheme
+    - action: utter_cost_info
+
+  - story: emergency assistance
+    steps:
+    - intent: emergency_help
     - action: utter_emergency
+    - action: action_get_emergency_contacts
 
-  - rule: Bot challenge
+  - story: thank you
     steps:
-    - intent: bot_challenge
-    - action: utter_iamabot
-
-  - rule: Greet user
-    steps:
-    - intent: greet
-    - action: utter_greet
-
-  - rule: Default fallback
-    steps:
-    - intent: nlu_fallback
-    - action: utter_default
+    - intent: thank
+    - action: utter_goodbye

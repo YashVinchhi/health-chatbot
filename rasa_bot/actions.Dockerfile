@@ -1,17 +1,18 @@
 FROM rasa/rasa-sdk:3.6.0
 
-USER root
-
 WORKDIR /app
 
-# Copy requirements first for better layer caching
-COPY actions/requirements.txt ./
-RUN pip install -r requirements.txt
+COPY actions /app/actions
+COPY data /app/data
+COPY actions/requirements.txt /app
 
-# Ensure SQLAlchemy is pinned to <2.0 to avoid SQLAlchemy 2.0 deprecation/compat warnings
-RUN pip install "sqlalchemy<2.0"
+USER root
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
-# Copy actions directory contents but preserve the entrypoint.sh
-COPY actions/actions.py ./actions.py
+# Set default port
+ENV PORT=5855
+
+EXPOSE ${PORT}
 
 USER 1001
+CMD ["start", "--actions", "actions", "--port", "5855"]

@@ -16,6 +16,26 @@ nlu:
       - aap kaise hain
       - how are you
       - good day
+      - नमस्ते
+      - नमस्कार
+      - आप कैसे हैं
+      - हैलो
+      - हाय
+      - सुप्रभात
+      - शुभ संध्या
+      - వనక్కం
+      - హలో
+      - ఎలా ఉన్నారు
+      - शुभ दिन
+      - வணக்கம்
+      - ஹலோ
+      - எப்படி இருக்கீங்க
+      - নমস্কার
+      - হ্যালো
+      - কেমন আছেন
+      - सत श्री अकाल
+      - हैलो डॉक्टर
+      - मला मदत करा
 
   - intent: goodbye
     examples: |
@@ -28,8 +48,15 @@ nlu:
       - farewell
       - take care
       - dhanyawad
-      - thank you
-      - thanks for your help
+      - अलविदा
+      - फिर मिलेंगे
+      - बाय बाय
+      - धन्यवाद आपका
+      - వీడ్కోలు
+      - మళ్లీ కలుద్దాం
+      - வீட்டுக்கு போகிறேன்
+      - পরে দেখা হবে
+      - বিদায়
 
   - intent: ask_symptoms
     examples: |
@@ -68,6 +95,46 @@ nlu:
       - My body hurts
       - I feel ill
       - I'm under the weather
+      - मुझे [बुखार](symptom) है
+      - मेरे [सिर](symptom) में दर्द है
+      - मुझे [खांसी](symptom) आ रही है
+      - मेरे [गले](symptom) में दर्द है
+      - मुझे [चक्कर](symptom) आ रहे हैं
+      - मेरे [पेट](symptom) में दर्द है
+      - मुझे [उल्टी](symptom) हो रही है
+      - मुझे [दस्त](symptom) हो रहे हैं
+      - मुझे [सांस](symptom) लेने में तकलीफ है
+      - मेरे [जोड़ों](symptom) में दर्द है
+      - मुझे [कमजोरी](symptom) लग रही है
+      - मेरे [छाती](symptom) में दर्द है
+      - मुझे [बदन दर्द](symptom) हो रहा है
+      - मुझे [तबीयत](symptom) खराब लग रही है
+      - నాకు [జ్వరం](symptom) వచ్చింది
+      - నా [తల](symptom) నొప్పి వస్తోంది
+      - నాకు [దగ్గు](symptom) వస్తోంది
+      - నా [గొంతు](symptom) నొప్పి వస్తోంది
+      - నాకు [కడుపు](symptom) నొప్పి వస్తోంది
+      - నాకు [వాంతులు](symptom) వస్తున్నాయి
+      - నాకు [మలబద్ధకం](symptom) వస్తోంది
+      - నాకు [ఊపిరి](symptom) ఆడటంలేదు
+      - నా [కీళ్ళు](symptom) బాధపడుతున్నాయి
+      - నాకు [అలసట](symptom) అనిపిస్తోంది
+      - எனக்கு [காய்ச்சல்](symptom) வந்துருச்சு
+      - என் [தலை](symptom) வலிக்குது
+      - எனக்கு [இருமல்](symptom) வருது
+      - என் [தொண்டை](symptom) வலிக்குது
+      - எனக்கு [வயிறு](symptom) வலிக்குது
+      - எனக்கு [வாந்தி](symptom) வருது
+      - எனக்கு [வயிற்றுப்போக்கு](symptom) இருக்கு
+      - எனக்கு [மூச்சு](symptom) வாங்க கஷ்டமாயிருக்கு
+      - আমার [জ্বর](symptom) হয়েছে
+      - আমার [মাথা](symptom) ব্যথা করছে
+      - আমার [কাশি](symptom) হচ্ছে
+      - আমার [গলা](symptom) ব্যথা করছে
+      - আমার [পেট](symptom) ব্যথা করছে
+      - আমার [বমি](symptom) হচ্ছে
+      - আমার [পাতলা পায়খানা](symptom) হচ্ছে
+      - আমার [শ্বাস](symptom) নিতে কষ্ট হচ্ছে
 
   - intent: ask_vaccination
     examples: |
@@ -94,142 +161,668 @@ nlu:
       - Mission Indradhanush
       - Vaccine certificate
       - Vaccination side effects
+      - मुझे कब टीका लगवाना चाहिए?
+      - कौन सा टीका लगवाना चाहिए?
+      - टीका कहाँ से लगवाएं?
+      - [कोविड](vaccine_type) का टीका बताइए
+      - [फ्लू](vaccine_type) का टीका चाहिए
+      - टीकाकरण का समय सारणी
+      - टीके के साइड इफेक्ट्स
+      - क्या टीका सुरक्षित है?
+      - बच्चों के लिए टीका
+      - सरकारी टीकाकरण कार्यक्रम
+      - कोविन में रजिस्ट्रेशन कैसे करें
+      - मुफ्त टीका कहाँ मिलेगा
+      - టీకా ఎప్పుడు వేయించుకోవాలి?
+      - ఏ టీకా వేయించుకోవాలి?
+      - టీకా ఎక్కడ వేయించుకోవాలి?
+      - [కోవిడ్](vaccine_type) టీకా గురించి చెప్పండి
+      - పిల్లలకు టీకాలు
+      - సర్కారు టీకా కార్యక్‌రమాలు
+      - டீகா எப்போ போடணும்?
+      - என்ன டீகா போடணும்?
+      - டீகா எங்க போடுவாங்க?
+      - [கோவிட்](vaccine_type) டீகா பத்தி சொல்லுங்க
+      - குழந்தைங்களுக்கு டீகா
+      - அரசு சுகாதார திட்டங்கள்
+      - আমার কখন টিকা নেওয়া উচিত?
+      - কোন টিকা নেওয়া উচিত?
+      - টিকা কোথায় নেব?
 
   - intent: ask_outbreak_info
     examples: |
       - Any disease outbreaks nearby?
       - [COVID](disease) cases in my area
-      - Health alerts
-      - Disease outbreaks
+      - Disease outbreak alerts
+      - Health emergency in my location
+      - [Dengue](disease) outbreak information
+      - [Malaria](disease) cases reported
+      - [Chikungunya](disease) outbreak
+      - Health alerts for [Delhi](location)
+      - Disease surveillance updates
       - Epidemic information
-      - Health warnings
-      - [Flu](disease) outbreak
-      - Local health alerts
-      - [Dengue](disease) cases
-      - [Malaria](disease) outbreak
-      - Current health situation
-      - Disease surveillance
-      - Health advisories
-      - Outbreak notifications
-      - Public health emergency
-      - Seasonal diseases
-      - Monsoon diseases
-      - Health alert system
+      - क्या कोई बीमारी फैल रही है?
+      - मेरे क्षेत्र में [कोविड](disease) के केस
+      - बीमारी का प्रकोप
+      - [डेंगू](disease) का प्रकोप
+      - [मलेरिया](disease) के केस
+      - स्वास्थ्य चेतावनी
+      - [दिल्ली](location) में बीमारी
+      - మా ప్రాంతంలో వ్యాధులు వ్యాప్తి అవుతున్నాయా?
+      - [కోవిడ్](disease) కేసులు
+      - [డెంగ్యూ](disease) వ్యాప్తి
+      - [మలేరియా](disease) కేసులు
+      - என் ஏரியாவில் நோய் பரவுதா?
+      - [கோவிட்](disease) கேஸ்
+      - [டெங்கு](disease) வியாధி
+      - [மலேரியா](disease) கேஸ்
+      - আমার এলাকায় কোনো রোগ ছড়াচ্ছে?
+      - [কোভিড](disease) কেস
+      - [ডেঙ্গু](disease) প্রকোপ
+      - [ম্যালেরিয়া](disease) কেস
+
+  - intent: ask_prevention_tips
+    examples: |
+      - How to prevent [COVID](disease)?
+      - Prevention tips for [fever](symptom)
+      - How to stay healthy?
+      - Disease prevention methods
+      - Health safety tips
+      - How to boost immunity?
+      - Hygiene practices
+      - Hand washing technique
+      - Mask wearing guidelines
+      - Social distancing rules
+      - [कोविड](disease) से कैसे बचें?
+      - [बुखार](symptom) से बचाव
+      - स्वस्थ कैसे रहें?
+      - बीमारी से बचाव
+      - स्वास्थ्य सुरक्षा टिप��स
+      - इम्यूनिटी कैसे बढ़ाएं?
+      - साफ-सफाई के तरीके
+      - हाथ धोने का तरीका
+      - मास्क पहनने के नियम
+      - [కోవిడ్](disease) నుండి ఎలా కాపాడుకోవాలి?
+      - ఆరోగ్యంగా ఎలా ఉండాలి?
+      - వ్యాధుల నుండి కాపాడుకోవడం
+      - రోగనిరోధక శక్తి పెంచుకోవడం
+      - [கோவிட்](disease) லிருந்து எப்படி காப்பாத்திக்கணும்?
+      - ஆரோக்கியமா எப்படி இருக்கணும்?
+      - நோய் தடுப்பு முறைகள்
+      - [কোভিড](disease) থেকে কীভাবে বাঁচব?
+      - সুস্থ থাকার উপায়
+      - রোগ প্রতিরোধের পদ্ধতি
+
+  - intent: ask_medicine_info
+    examples: |
+      - Medicine for [fever](symptom)
+      - [Paracetamol](medicine) dosage
+      - Side effects of [aspirin](medicine)
+      - Generic medicine availability
+      - Medicine interactions
+      - Over the counter medicines
+      - Prescription requirements
+      - Medicine storage tips
+      - [बुखार](symptom) की दवा
+      - [पैरासिटामोल](medicine) की खुराक
+      - [एस्प्रिन](medicine) के साइड इफेक्ट्स
+      - जेनेरिक दवा की उपलब्धता
+      - दवा के इंटरैक्शन
+      - बिना डॉक्टर की पर्ची वाली दवाएं
+      - दवा रखने के तरीके
+      - [జ్వరం](symptom) కోసం మందు
+      - [పారాసిటమాల్](medicine) మోతాదు
+      - జెనరిక్ మందుల లభ్యత
+      - [காய்ச்சலின்](symptom) জন্য ওষুধ
+      - [প্యারাসিটামল](medicine) এর মাত্রা
+      - জেনেরিক ওষুধের প্রাপ্যতা
+
+  - intent: ask_hospital_info
+    examples: |
+      - Nearest hospital
+      - Hospital in [Delhi](location)
+      - Emergency hospital
+      - Government hospital nearby
+      - Private hospital recommendations
+      - Hospital contact numbers
+      - Hospital bed availability
+      - ICU availability
+      - Ambulance services
+      - नजदीकी अस्पताल
+      - [दिल्ली](location) में अस्पताल
+      - सरकारी अस्पताल
+      - निजी अस्पताल
+      - एम्बुलेंस सेवा
+      - దగ్గరలో ఆసుపత్రి
+      - [దిల్లీ](location) లో ఆసుపత్రులు
+      - ప్రభుత్వ ఆసుపత్రి
+      - అంబులెన్స్ సేవలు
+      - దగ్గరలో ఉన్న ఆసుపత్రి
+      - [দিল্লী](location) তে হাসপাতাল
+      - সরকারি হাসপাতাল
+
+  - intent: ask_hospitals
+    examples: |
+      - Find hospitals near me
+      - Show me hospitals
+      - Where are the hospitals?
+      - List of hospitals
+      - Hospital locations
+      - Best hospitals in my area
+      - Specialty hospitals
+      - Multi-specialty hospitals
+      - मेरे नजदीक अस्पताल ढूंढें
+      - अस्पताल की सूची
+      - बेहतरीन अस्पताल
+      - స్పెషాలిటీ ఆసుపత్రులు
+      - మల్టీ స్పెషాలిటీ ఆసుపత్రులు
+      - స్పేశలిటీ अस्पताल दिखाएं
+
+  - intent: ask_location
+    examples: |
+      - My location is [Delhi](location)
+      - I am in [Mumbai](location)
+      - I live in [Bangalore](location)
+      - Currently in [Chennai](location)
+      - I'm from [Hyderabad](location)
+      - मैं [दिल्ली](location) में हूं
+      - मेरा स्थान [मुंबई](location) है
+      - मैं [बैंगलोर](location) में रहता हूं
+      - నేను [హైదరాబాద్](location) లో ఉన్నాను
+      - నా స్థానం [చెన్నై](location)
+      - நான் [சென்னை](location) இல் இருக்கிறேன்
+      - আমি [দিল্লী](location) তে আছি
+
+  - intent: ask_cost
+    examples: |
+      - Treatment cost
+      - Hospital charges
+      - Medicine price
+      - Consultation fees
+      - Surgery cost
+      - Insurance coverage
+      - Free treatment options
+      - Government schemes for treatment
+      - इलाज का खर्च
+      - अस्पताल का शुल्क
+      - दवा की कीमत
+      - डॉक्टर की फीस
+      - सर्जरी का खर्च
+      - बीमा कवरेज
+      - मुफ्त इलाज
+      - চিকিৎসার খরচ
+      - ওষুধের দাম
+      - ডাক্তারের ফি
 
   - intent: ask_emergency
     examples: |
-      - Emergency
-      - I need immediate help
+      - Emergency help
+      - I need immediate medical attention
+      - This is an emergency
       - Call ambulance
-      - Urgent medical help
-      - Emergency contact
-      - Hospital nearby
-      - Emergency room
-      - Critical condition
-      - Medical emergency
-      - Help me please
-      - This is urgent
-      - I need help now
-      - Emergency services
-      - Ambulance number
-      - Emergency numbers India
-      - Medical emergency India
-      - 102 ambulance
-      - 108 emergency
-      - Heart attack
+      - Emergency contact numbers
+      - Heart attack symptoms
       - Stroke symptoms
-      - Accident help
-      - Poison emergency
+      - Medical emergency
+      - तुरंत मदद चाहिए
+      - एमर्जेंसी हेल्प
+      - एम्बुलेंस बुलाएं
+      - आपातकालीन संपर्क नंबर
+      - हार्ट अटैक के लक्षण
+      - అత్యవసర సహాయం
+      - తక్షణ వైద్య సహాయం
+      - అంబులెన్స్ పిలవండి
+      - জরুরি সাহায্য
+      - তাৎক্ষণিক চিকিৎসা সাহায্য
 
   - intent: ask_general_health
     examples: |
-      - How to stay healthy?
-      - Health tips
-      - Preventive measures
-      - Healthy lifestyle
-      - Diet advice
-      - Exercise recommendations
-      - Sleep tips
-      - Mental health
-      - Wellness advice
-      - How to maintain good health
-      - Daily health routine
-      - Nutrition guidelines
-      - Fitness tips
-      - Healthy habits
-      - Disease prevention
-      - Immunity boosting
-      - Health maintenance
-      - Lifestyle tips
-      - Wellness guide
+      - General health tips
+      - How to stay healthy
+      - Health checkup information
+      - Preventive healthcare
+      - Health screening tests
+      - Blood pressure information
+      - Diabetes information
+      - Heart health tips
+      - सामान्य स्वास्थ्य टिप्स
+      - स्वस्थ कैसे रहें
+      - स्वास्थ्य जांच की जानकारी
+      - निवारक स्वास्थ्य सेवा
+      - రక్తపోటు సమాచారమ్
+      - మధుమేహం సమాచారం
+      - हृदय स्वास्थ्य की जानकारी
 
   - intent: ask_medication
     examples: |
       - What medicine should I take?
-      - Medication for [fever](symptom)
+      - Medication for my condition
+      - Drug information
+      - Prescription medicine
+      - Medicine side effects
       - Drug interactions
-      - Medicine dosage
-      - Side effects
-      - Prescription help
-      - Over the counter medicine
-      - Pain relievers
-      - Antibiotic information
-      - Medicine safety
-      - Drug allergies
-      - Generic medicines
-      - Jan Aushadhi
-      - Medicine storage
-      - Expiry dates
-      - Medicine consultation
+      - Generic vs branded medicine
+      - मुझे कौन सी दवा लेनी चाहिए?
+      - मेरी बीमारी की दवा
+      - दवा की जानकारी
+      - প্রেসক্রিপশন ওষুধ
+      - ওষুধের পার্শ্বপ্রতিক্রিয়া
 
-  - intent: ask_hospitals
+  - intent: bot_challenge
     examples: |
-      - Hospitals near me
-      - Find hospitals in [Delhi](location)
-      - Best hospitals in [Mumbai](location)
-      - Government hospitals
-      - Private hospitals
-      - Hospital contact numbers
-      - AIIMS hospitals
-      - Emergency hospitals
-      - Specialty hospitals
-      - Hospital services
-      - Medical facilities
-      - Healthcare centers
-      - Nursing homes
-      - Clinic near me
-      - Doctor consultation
-      - Hospital appointments
+      - Are you a bot?
+      - Are you human?
+      - Are you real?
+      - What are you?
+      - Who are you?
+      - क्या आप बॉट हैं?
+      - क्या आप इंसान हैं?
+      - आप कौन हैं?
+      - మీరు బాట్ నా?
+      - మీరు మనిషి నా?
+      - நீங்க பாட்டா?
+      - আপনি কি বট?
 
-  - intent: ask_location
+  - intent: ask_prevention
     examples: |
-      - I am in [Delhi](location)
-      - I live in [Mumbai](location)
-      - My location is [Bangalore](location)
-      - I'm from [Chennai](location)
-      - I'm in [Hyderabad](location)
-      - My city is [Pune](location)
-      - I'm located in [Kolkata](location)
-      - I'm in [Ahmedabad](location)
-      - Find services in [Jaipur](location)
-      - Healthcare in [Lucknow](location)
+      - Disease prevention
+      - How to prevent illness
+      - Health precautions
+      - Safety measures
+      - Infection control
+      - बीमारी से कैसे बचें
+      - स্বাস্থ্য সতর্কতা
+      - সংক্রমণ নিয়ন্ত্রণ
 
-  - intent: ask_cost
+  - intent: ask_exercise
     examples: |
-      - How much does treatment cost?
-      - Healthcare costs in India
-      - Affordable healthcare
-      - Free medical services
-      - Government healthcare costs
-      - Private hospital charges
-      - Insurance coverage
+      - Exercise for health
+      - Physical activity recommendations
+      - Workout routine
+      - Fitness tips
+      - योग और व्यायाम
+      - शारीरिक गतिविधि
+      - ব্যায়াম మరియు যোগ
+
+  - intent: ask_diet
+    examples: |
+      - Healthy diet
+      - Nutrition advice
+      - Food recommendations
+      - Diet for diabetes
+      - Weight loss diet
+      - स्वस्थ आहार
+      - पोषण सलाह
+      - খাদ্য সুপারিশ
+
+  - intent: ask_mental_health
+    examples: |
+      - Mental health support
+      - Stress management
+      - Depression help
+      - Anxiety treatment
+      - Counseling services
+      - मानसिक स्वास्थ्य सहायता
+      - तनाव प्रबंधन
+      - মানসিক স্বাস্থ্য সহায়তা
+
+  - intent: ask_health_scheme
+    examples: |
+      - Government health schemes
       - Ayushman Bharat
-      - ESI benefits
-      - Medicine costs
-      - Consultation fees
-      - Test charges
-      - Surgery costs
-      - Emergency charges
+      - Health insurance
+      - Free medical treatment
+      - सरकारी स्वास्थ्य योजनाएं
+      - आयुष्मान भारत
+      - স্বাস্থ্য বীমা
+
+  - intent: emergency_help
+    examples: |
+      - Help me now
+      - I need urgent help
+      - Emergency situation
+      - Call for help immediately
+      - तुरंत मदद करें
+      - জরুরি সাহায্য চাই
+
+  - intent: thank
+    examples: |
+      - Thanks
+      - Thank you so much
+      - I appreciate it
+      - Thanks for the help
+      - धन्यवाद
+      - आपका शुक्रिया
+      - ধন্যবাদ
+      - ధన్యవাদాలు
+      - நன்றி
+
+  - intent: out_of_scope
+    examples: |
+      - What's the weather like?
+      - Tell me a joke
+      - What's your favorite color?
+      - How old are you?
+      - Random question
+      - मौसम कैसा है?
+      - मुझे कोई जोक सुनाओ
+      - तुम्हारा पसंदीदा रंग क्या है?
+      - तुम कितने साल के हो?
+      - यादृच्छिक प्रश्न
+      - వాతావరణం ఎలా ఉంది?
+      - నాకు ఒక జోక్ చెప్పు
+      - నీ ఇష్టమైన రంగు ఏది?
+      - నువ్వు ఎంత సంవత్సరాల వయస్సు ఉన్నావు?
+      - యాదృచ్ఛిక ప్రశ్న
+      - আবহাওয়া কেমন?
+      - আমাকে একটি রসিকতা বলো
+      - তোমার প্রিয় রঙ কি?
+      - তুমি কত বছর বয়সী?
+      - এলোমেলো প্রশ্ন
+
+  - lookup: symptom
+    examples: |
+      - fever
+      - बुखार
+      - జ్వరం
+      - காய்ச்சல்
+      - জ্বর
+      - headache
+      - सिर दर्द
+      - తల నొప్పి
+      - தலைவலி
+      - মাথাব্যথা
+      - cough
+      - खांसी
+      - దగ్గు
+      - ఇరుమల్
+      - కাশি
+      - cold
+      - जुकाम
+      - జలుబు
+      - సళి
+      - సర్ది
+      - sore throat
+      - गले में दर्द
+      - గొంతు నొప్ఫి
+      - தொண்டைவலி
+      - গলাব্যথা
+      - stomach pain
+      - पेट दर्द
+      - కడుపు నొప్పి
+      - வயிற்றுவலி
+      - পেটব্যথা
+      - nausea
+      - जी मिचलाना
+      - వాంతులు
+      - కుమటల్
+      - বমিভাব
+      - diarrhea
+      - दस्त
+      - విరేచనలు
+      - வயிற்றுப்பోக்கு
+      - পাতলাপায়খানা
+      - vomiting
+      - उल्टी
+      - వాంతులు
+      - வாந்தி
+      - বমি
+      - dizziness
+      - चक्कर आना
+      - తలతిరుగుట
+      - தலைசுற்றல்
+      - মাথাঘোরা
+      - weakness
+      - कमजोरी
+      - బలహీనత
+      - పలవీనం
+      - দুর্বলতা
+      - fatigue
+      - थकान
+      - అలసట
+      - కளைப்பு
+      - క్లాంతి
+      - chest pain
+      - छाती में दर्द
+      - ఛాతీ నొప్పి
+      - மார்புவலி
+      - বুকেব্যথা
+      - breathing difficulty
+      - सांस लेने में तकलीफ
+      - ఊపిరి ఆడకపోవడం
+      - மூச்சுவிடுவதில் சிரமம்
+      - শ্বাসকষ্ট
+      - body ache
+      - बदन दर्द
+      - శరీర నొప్పులు
+      - உடல்வலி
+      - গায়েব্যথা
+      - joint pain
+      - जोड़ों में दर्द
+      - కీళ్ళ నొప్పులు
+      - మూఢ్టువలి
+      - గাঁటిబొత్తు
+      - back pain
+      - कमर दर्द
+      - వీపు నొప్‌పి
+      - முதுகுவலி
+      - পিঠেব্যথা
+      - rash
+      - चकत्ते
+      - దద్దుర్లు
+      - தடிپ்பு
+      - ফুসকুড়ি
+
+  - lookup: location
+    examples: |
+      - Delhi
+      - दिल्ली
+      - ఢిల్లీ
+      - டில்லி
+      - দিল্লি
+      - Mumbai
+      - मुंबई
+      - ముంబై
+      - ముంబై
+      - মুম্বাই
+      - Bangalore
+      - बैंगलोर
+      - బెంగళూరు
+      - பெங்களூரு
+      - ব্যাঙ্গালোর
+      - Chennai
+      - चेन्नई
+      - చెన్నై
+      - சென்னை
+      - চেন্নাই
+      - Hyderabad
+      - हैदराबाद
+      - హైదరాబాద్
+      - హైదరాబాద్ది
+      - హాయదరాబాద
+      - Kolkata
+      - कोलकाता
+      - కోల్‌కతా
+      - கொல்‌కతா
+      - কলকাতা
+      - Pune
+      - पुणे
+      - పూణే
+      - పునే
+      - পুনే
+      - Ahmedabad
+      - अहमदाबाद
+      - అహ్మదాబాద్
+      - అహమదాబాద్
+      - আহমেদাবাদ
+      - Surat
+      - सूरत
+      - సూరత్
+      - சூரత్
+      - সুরাট
+      - Jaipur
+      - जयपुर
+      - జైపూర్
+      - జేయ్‌పూర్
+      - জয়পুর
+
+  - lookup: disease
+    examples: |
+      - COVID
+      - कोविड
+      - కోవిడ్
+      - கோவிட்
+      - কোভিড
+      - COVID-19
+      - dengue
+      - डेंगू
+      - డెంగ్యూ
+      - టెంగు
+      - డেঙ্গు
+      - malaria
+      - मलेरिया
+      - మలేరియా
+      - மலேரியா
+      - ম্যালেরিয়া
+      - chikungunya
+      - चिकनगुनिया
+      - చికున్‌గున్యా
+      - சிக்குன்குனியா
+      - চিকুনগুনিয়া
+      - tuberculosis
+      - तपेदिक
+      - క్షయవ్యాధి
+      - కాస్నోய்
+      - যক্ষ্মা
+      - diabetes
+      - मधुमेह
+      - మధుమేహం
+      - నీరிழிவு
+      - ডায়াবেটিস
+      - hypertension
+      - उच्च रक्तचाप
+      - రక్తపోటు
+      - உயர்இరక్తஅழுत्तम्
+      - υψηλή αρτηριακή πίεση
+      - heart disease
+      - हृदय रोग
+      - గుండె జబ్బులు
+      - இருதயనோய்
+      - হৃদরোগ
+      - cancer
+      - कैंसर
+      - క్యాన్సర్
+      - புற்றுநோய्
+      - ক্যান্সার
+      - asthma
+      - दमा
+      - అజ్మా
+      - ஆஸ்துமா
+      - হাঁপানি
+
+  - lookup: vaccine_type
+    examples: |
+      - COVID
+      - कोविड
+      - కోవిడ్
+      - கோவிட்
+      - কোভিড
+      - flu
+      - फ्लू
+      - ఫ్లూ
+      - காய்ச्چల
+      - ফ্লু
+      - hepatitis
+      - हेपेटाइटिस
+      - హెపటైటిస్
+      - ஹெபடைடிஸ்
+      - হেপাটাইটিস
+      - measles
+      - खसरा
+      - మీజిల్స్
+      - தட்டம்மை
+      - হাম
+      - polio
+      - पोलियो
+      - పోలియో
+      - పోలియో
+      - পোলিও
+      - tetanus
+      - टिटनेस
+      - టెటనస్
+      - டெட்டனஸ்
+      - టిటెనస్
+      - diphtheria
+      - डिप्थीरिया
+      - డిప్తీరియా
+      - டிப்தீரியா
+      - ডিপথেরিয়া
+      - whooping cough
+      - काली खांसी
+      - కుక్కల దగ్గు
+      - கருப்புஇருமல্
+      - হুপিং কাশি
+
+  - lookup: medicine
+    examples: |
+      - paracetamol
+      - पैरासिटामोल
+      - పారాసిటమాల్
+      - பாராசிட்டமால்
+      - প্যারাসিটামল
+      - aspirin
+      - एस्प्रिन
+      - ఆస్పిరిన్
+      - ఆஸ్పిరిన్
+      - অ্যাসپিরিন
+      - ibuprofen
+      - आईब्यूप्रोफेन
+      - ఐబుప్రోఫెన్
+      - ఐబుబروఫেन্
+      - ఐబుప్రోఫెన్
+      - crocin
+      - क्रोसिन
+      - క్రోసిన్
+      - க்ரோசின்
+      - ক্রোসিন
+      - combiflam
+      - कॉम्बिफ्लेम
+      - కాంబిఫ్లేమ్
+      - கோம்பிஃப்லேம்்
+      - কমবিফ্লেম
+      - dolo
+      - डोलो
+      - డోలో
+      - டோலோ
+      - డోలో
+      - calpol
+      - कैल्पोल
+      - కాల్పోల్
+      - కాలిల్‌బోల్
+      - ক্যালপল
+
+  - lookup: scheme
+    examples: |
+      - Ayushman Bharat
+      - आयुष्मान भारत
+      - ఆయుష్మాన్ భారత్
+      - ஆயு스மான் பாரத்
+      - আয়ুষ্মান ভারত
+      - PMJAY
+      - प्रधानमंत्री जन आरोग्य योजना
+      - ప్రధానమంత్రి జన ఆరోగ్య యోజన
+      - பிரதானமந்திரி জন ஆரோগ்ய யோஜனா
+      - প্রধানমন্ত্রী জন আরোগ্য যোজনা
+      - Jan Aushadhi
+      - जन औषधि
+      - జన ఔషధి
+      - ஜன் ஔषதி
+      - জন ঔষধি
+      - Mission Indradhanush
+      - मिशन इंद्रधनुष
+      - మిషన్ ఇంద్రధనుష్
+      - மிஷன் இந்த்ரధனுஷ
+      - মিশন ইন্দ্রধনুষ
 
   - intent: affirm
     examples: |
@@ -237,166 +830,349 @@ nlu:
       - yeah
       - yep
       - sure
+      - of course
+      - definitely
       - absolutely
       - correct
       - right
       - that's right
-      - haan
-      - ji haan
-      - bilkul
-      - sahi hai
+      - हां
+      - जी हां
+      - बिल्कुल
+      - सही है
+      - ठीक है
+      - అవును
+      - సరే
+      - ఖచ్చితంగా
+      - சரி
+      - ஆமாம்
+      - நிச்சயம்
+      - হ্যাঁ
+      - ঠিক আছে
+      - অবশ্যই
 
   - intent: deny
     examples: |
       - no
       - nope
-      - not really
-      - nah
       - never
       - I don't think so
-      - nahi
-      - bilkul nahi
-      - galat
-
-  - intent: ask_prevention
-    examples: |
-      - How to prevent [COVID](disease)?
-      - Prevention tips for [diabetes](disease)
-      - How to avoid getting sick?
-      - Disease prevention methods
-      - Preventive healthcare
-      - How to boost immunity?
-      - Infection prevention
-      - Safety measures
-      - Hygiene tips
-      - Health protection
-
-  - intent: ask_exercise
-    examples: |
-      - Exercise recommendations
-      - Workout plan
-      - Fitness routine
-      - Physical activity
-      - Yoga benefits
-      - Walking benefits
-      - Sports for health
-      - Exercise for [diabetes](disease)
-      - Workout for [heart](symptom) health
-      - Home exercises
-
-  - intent: ask_diet
-    examples: |
-      - Healthy diet plan
-      - Nutrition advice
-      - What should I eat?
-      - Diet for [diabetes](disease)
-      - Weight loss diet
-      - Balanced nutrition
-      - Indian healthy food
-      - Vegetarian diet
-      - Food for immunity
-
-  - intent: ask_mental_health
-    examples: |
-      - Mental health support
-      - Dealing with stress
-      - Anxiety help
-      - Depression symptoms
-      - Mental wellness
-      - Emotional health
-      - Stress management
-      - Counseling services
-      - Mental health helpline
-      - Psychological support
-
-  - intent: bot_challenge
-    examples: |
-      - are you a bot?
-      - are you human?
-      - am I talking to a bot?
-      - am I talking to a human?
-      - what are you?
-      - who are you?
-      - are you real?
-      - are you artificial intelligence?
+      - don't like that
+      - no way
+      - not really
+      - नहीं
+      - ना
+      - बिल्कुल नहीं
+      - ऐसा नहीं है
+      - కాదు
+      - లేదు
+      - అలా కాదు
+      - లేదు
+      - அப்படி இல்லை
+      - না
+      - তা নয়
+      - একদম না
 
   - lookup: symptom
     examples: |
       - fever
+      - बुखार
+      - జ్వరం
+      - காய்ச்சல்
+      - জ্বর
       - headache
+      - सिर दर्द
+      - తల నొప్పి
+      - தலைவலி
+      - মাথাব্যথা
       - cough
+      - खांसी
+      - దగ్గు
+      - ఇరుమల్
+      - కাশি
       - cold
+      - जुकाम
+      - జలుబు
+      - సళి
+      - సర్ది
       - sore throat
-      - nausea
-      - vomiting
-      - diarrhea
+      - गले में दर्द
+      - గొంతు నొప్ఫి
+      - தொண்டைவலி
+      - গলাব্যথা
       - stomach pain
-      - chest pain
-      - back pain
-      - joint pain
-      - muscle pain
-      - fatigue
-      - weakness
+      - पेट दर्द
+      - కడుపు నొప్పి
+      - வயிற்றுவலி
+      - পেটব্যথা
+      - nausea
+      - जी मिचलाना
+      - వాంతులు
+      - కుమటల్
+      - বমিভাব
+      - diarrhea
+      - दस्त
+      - విరేచనలు
+      - வயிற்றுப்பోக்கு
+      - পাতলাপায়খানা
+      - vomiting
+      - उल्टी
+      - వాంతులు
+      - வாந்தி
+      - বমি
       - dizziness
-      - shortness of breath
-      - difficulty breathing
+      - चक्कर आना
+      - తలతిరుగుట
+      - தலைசுற்றல்
+      - মাথাঘোরা
+      - weakness
+      - कमजोरी
+      - బలహీనత
+      - పలవీనం
+      - দুর্বলতা
+      - fatigue
+      - थकान
+      - అలసట
+      - కளைப்பு
+      - క్లాంతి
+      - chest pain
+      - छाती में दर्द
+      - ఛాతీ నొప్పి
+      - மார்புவலி
+      - বুকेब্যথా
+      - breathing difficulty
+      - सांस लेने में तकलीफ
+      - ఊపిరి ఆడకపోవడం
+      - மூச்சுவிடுவதில் சிரமம்
+      - শ্বাসকষ্ট
+      - body ache
+      - बदन दर्द
+      - శరీర నొప్పులు
+      - உடல்வலி
+      - গায়েব্যথা
+      - joint pain
+      - जोड़ों में दर्द
+      - కీళ్ళ నొప్పులు
+      - మూఢ్టువలి
+      - గাঁటిబొత్తు
+      - back pain
+      - कमर दर्द
+      - వీపు నొప్‌పి
+      - முதுகுவலி
+      - পিঠেব্যথা
       - rash
-      - itching
-      - swelling
-      - bleeding
-      - bruising
+      - चकत्ते
+      - దద్దుర్లు
+      - தடிپ்பு
+      - ফুসকুড়ি
 
   - lookup: location
     examples: |
       - Delhi
+      - दिल्ली
+      - ఢిల్లీ
+      - డిల్లి
+      - দিল্লি
       - Mumbai
+      - मुंबई
+      - ముంబై
+      - ముంబై
+      - ముమ్బై
       - Bangalore
+      - बैंगलोर
+      - బెంగళూరు
+      - பெங்களூரு
+      - ব্যাঙ্গালোর
       - Chennai
+      - चेन्नई
+      - చెన్నై
+      - சென்னை
+      - চেন্নাই
       - Hyderabad
-      - Pune
+      - हैदराबाद
+      - హైదరాబాద్
+      - హైదరాబాద్ది
+      - హాయదరాబాద
       - Kolkata
+      - कोलकाता
+      - కోల్‌కతా
+      - கொல்‌కతா
+      - কলকাতা
+      - Pune
+      - पुणे
+      - పూణే
+      - పునే
+      - পুনే
       - Ahmedabad
+      - अहमदाबाद
+      - అహ్మదాబాద్
+      - అహమదాబాద్
+      - আহমেদাবাদ
+      - Surat
+      - सूरत
+      - సూరత్
+      - சூரత్
+      - সুরাট
       - Jaipur
-      - Lucknow
-      - Kanpur
-      - Nagpur
-      - Visakhapatnam
-      - Bhopal
-      - Patna
-      - Ludhiana
-      - Agra
-      - Nashik
-      - Vadodara
-      - Rajkot
-
-  - lookup: vaccine_type
-    examples: |
-      - COVID-19
-      - COVID
-      - Covishield
-      - Covaxin
-      - flu
-      - influenza
-      - hepatitis
-      - measles
-      - polio
-      - tetanus
-      - DPT
-      - MMR
-      - BCG
+      - जयपुर
+      - జైపూర్
+      - జేయ్‌పూర్
+      - জয়পুর
 
   - lookup: disease
     examples: |
-      - COVID-19
       - COVID
-      - flu
-      - influenza
+      - कोविड
+      - కోవిడ్
+      - கோவிட்
+      - কোভিড
+      - COVID-19
       - dengue
+      - डेंगू
+      - డెంగ్యూ
+      - టెంగు
+      - డেঙ্গు
       - malaria
+      - मलेरिया
+      - మలేరియా
+      - மலேரియా
+      - ম্যালেরিয়া
       - chikungunya
-      - diabetes
-      - hypertension
-      - heart disease
-      - cancer
+      - चिकनगुनिया
+      - చికున్‌గున్యా
+      - சிக்குன்குனியா
+      - চিকুনগুনিয়া
       - tuberculosis
-      - pneumonia
+      - तपेदिक
+      - క్షయవ్యాధి
+      - కాస్నోய்
+      - যক্ষ্মা
+      - diabetes
+      - मधुमेह
+      - మధుమేహం
+      - నీరிழிவு
+      - ডায়াবেটিস
+      - hypertension
+      - उच्च रक्तचाप
+      - రక్తపోటు
+      - உயர்இరక్తஅழுत्तम्
+      - υψηλή αρτηριακή πίεση
+      - heart disease
+      - हृदय रोग
+      - గుండె జబ్బులు
+      - ఇరుదయనోய்
+      - হৃদরোগ
+      - cancer
+      - कैंसर
+      - క్యాన్సర్
+      - புற்றுநோய्
+      - ক্যান্সার
+      - asthma
+      - दमा
+      - అజ్మా
+      - ஆஸ்துமா
+      - হাঁপানি
+
+  - lookup: vaccine_type
+    examples: |
+      - COVID
+      - कोविड
+      - కోవిడ్
+      - கோவிட்
+      - কোভিড
+      - flu
+      - फ्लू
+      - ఫ్లూ
+      - காய்ச्چల
+      - ফ্লু
+      - hepatitis
+      - हेपेटाइटिस
+      - హెపటైటిస్
+      - ஹெபடைடிஸ்
+      - হেপাটাইটিস
+      - measles
+      - खसरा
+      - మీజిల్స్
+      - தட்டம்மை
+      - হাম
+      - polio
+      - पोलियो
+      - పోలియో
+      - పోలియో
+      - পোলিও
+      - tetanus
+      - टिटनेस
+      - టెటనస్
+      - டெட்டனஸ்
+      - టిటెనస్
+      - diphtheria
+      - डिप्थीरिया
+      - డిప్తీరియా
+      - டிப்தீரியா
+      - ডিপথেরিয়া
+      - whooping cough
+      - काली खांसी
+      - కుక్కల దగ్గు
+      - கருப்புஇருமல্
+      - হুপিং কাশি
+
+  - lookup: medicine
+    examples: |
+      - paracetamol
+      - पैरासिटामोल
+      - పారాసిటమాల్
+      - பாராசிட்டமால்
+      - প্যারাসিটামল
+      - aspirin
+      - एस्प्रिन
+      - ఆస్పిరిన్
+      - ఆஸ్పిరిన్
+      - অ্যাসپিরিন
+      - ibuprofen
+      - आईब्यूप्रोफेन
+      - ఐబుప్రోఫెన్
+      - ఐబుబروఫেन్
+      - ఐబుప్రోఫెన్
+      - crocin
+      - क्रोसिन
+      - క్రోసిన్
+      - க்ரோசின்
+      - ক্রোসিন
+      - combiflam
+      - कॉम्बिफ्लेम
+      - కాంబిఫ్లేమ్
+      - கோம்பிஃப்லேம்்
+      - কমবిఫ্লেম
+      - dolo
+      - डोलो
+      - డోలో
+      - டோலோ
+      - డోలో
+      - calpol
+      - कैल्पोल
+      - కాల్పోల్
+      - కాలిల్‌బోల్
+      - ক্যালপল
+
+  - lookup: scheme
+    examples: |
+      - Ayushman Bharat
+      - आयुष्मान भारत
+      - ఆయుష్మాన్ భారత్
+      - ஆயு스மான் பாரத்
+      - আয়ুষ্মান ভারত
+      - PMJAY
+      - प्रधानमंत्री जन आरोग्य योजना
+      - ప్రధానమంత్రి జన ఆరోగ్య యోజన
+      - பிரதானமந்திரி জন ஆரோগ்ய யோஜனா
+      - প্রধানমন্ত্রী জন আরোগ্য যোজনা
+      - Jan Aushadhi
+      - जन औषधि
+      - జన ఔషధి
+      - ஜன் ஔषதி
+      - জন ঔষধি
+      - Mission Indradhanush
+      - मिशन इंद्रधनुष
+      - మిషన్ ఇంద్రధనుష్
+      - மிஷன் இந்த்ரధனுஷ
+      - মিশন ইন্দ্রধনুষ

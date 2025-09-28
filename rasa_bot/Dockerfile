@@ -1,11 +1,28 @@
-FROM rasa/rasa:3.6.0
+FROM rasa/rasa:3.6.0-full
 
+# Install system dependencies
+USER root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SQLAlchemy with version constraint
+RUN pip install --no-cache-dir "sqlalchemy<2.0"
+
+# Set working directory and environment variables
 WORKDIR /app
-COPY . /app
+ENV PORT=5775
+ENV PYTHONPATH=/app
 
-# Pin SQLAlchemy to a 1.x release to avoid SQLAlchemy 2.0 incompatible warnings
-# (Rasa currently logs compatibility warnings with SQLAlchemy 2.0)
-# Install into the Rasa virtualenv explicitly for reliability
-RUN /opt/venv/bin/pip install "sqlalchemy<2.0"
+# Copy project files
+COPY . .
 
-CMD ["run", "--enable-api", "--cors", "*"]
+# Switch back to non-root user for security
+USER 1001
+
+# Expose the port
+EXPOSE ${PORT}
+
+# Run RASA
+CMD ["run", "--enable-api", "--cors", "*", "--port", "5775"]

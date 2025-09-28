@@ -3,15 +3,74 @@ from pydantic import BaseModel
 import logging
 import json
 from typing import Dict, Any
-from ..services.health_data_service import health_data_service
-from ..services.india_health_service import india_health_service
-from ..config import settings
-from ..routers.health_api import detect_intent, get_response_for_intent
+from services.health_data_service import health_data_service
+from services.india_health_service import india_health_service
+from services.session_service import session_service
+from config import settings
 import httpx
+import uuid
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Import the functions directly from health_api module
+def detect_intent(message: str) -> tuple[str, float]:
+    """
+    Enhanced intent detection with specific health analysis
+    Returns (intent, confidence)
+    """
+    message_lower = message.lower()
+
+    # Specific symptom analysis
+    fever_keywords = ['fever', 'temperature', 'hot', 'burning up', 'chills', 'shivering']
+    if any(keyword in message_lower for keyword in fever_keywords):
+        return ('fever_symptoms', 0.9)
+
+    headache_keywords = ['headache', 'head pain', 'migraine', 'head hurts', 'head ache']
+    if any(keyword in message_lower for keyword in headache_keywords):
+        return ('headache_symptoms', 0.9)
+
+    cough_keywords = ['cough', 'coughing', 'throat', 'sore throat', 'dry cough', 'wet cough']
+    if any(keyword in message_lower for keyword in cough_keywords):
+        return ('cough_symptoms', 0.9)
+
+    stomach_keywords = ['stomach', 'nausea', 'vomiting', 'diarrhea', 'abdominal', 'belly', 'tummy']
+    if any(keyword in message_lower for keyword in stomach_keywords):
+        return ('stomach_symptoms', 0.9)
+
+    # Hospital/medical facility search
+    hospital_keywords = ['hospital', 'clinic', 'doctor', 'medical center', 'emergency room', 'find hospital']
+    if any(keyword in message_lower for keyword in hospital_keywords):
+        return ('find_hospital', 0.8)
+
+    # Emergency situations
+    emergency_keywords = ['emergency', 'urgent', 'critical', 'ambulance', 'heart attack', 'stroke', 'unconscious']
+    if any(keyword in message_lower for keyword in emergency_keywords):
+        return ('emergency_help', 0.9)
+
+    # Greeting detection
+    greeting_keywords = ['hello', 'hi', 'hey', 'good morning', 'good evening', 'namaste', 'start', 'begin']
+    if any(keyword in message_lower for keyword in greeting_keywords):
+        return ('greet', 0.7)
+
+    return ('unknown', 0.3)
+
+def get_response_for_intent(intent: str, language: str = "en") -> str:
+    """
+    Get comprehensive, helpful responses based on detected intent and language
+    """
+    # Basic responses - this can be expanded with full multilingual support
+    responses = {
+        'greet': "Hello! I'm your health assistant. How can I help you today?",
+        'fever_symptoms': "For fever management: Rest, stay hydrated, take paracetamol as directed. Seek medical help if fever is above 103°F or lasts more than 3 days. Emergency: Call 108.",
+        'headache_symptoms': "For headaches: Rest in a quiet room, stay hydrated, apply cold/warm compress. Take over-the-counter pain relief if needed. See a doctor for severe or persistent headaches.",
+        'emergency_help': "🚨 EMERGENCY: Call 108 (India) immediately for medical emergencies. For immediate help: Medical Emergency: 108, Ambulance: 102, Police: 100",
+        'find_hospital': "To find hospitals: Call 108 for emergency, use Google Maps for 'hospitals near me', or visit your nearest district hospital/PHC for treatment.",
+        'unknown': "I can help with health questions. Try asking about symptoms, finding hospitals, or emergency help."
+    }
+
+    return responses.get(intent, responses['unknown'])
 
 class WhatsAppMessage(BaseModel):
     from_number: str

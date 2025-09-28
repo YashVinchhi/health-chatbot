@@ -2,6 +2,9 @@ import os
 from typing import Optional
 
 class Settings:
+    # Database Configuration
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///health_chatbot.db")
+
     # Health Data APIs
     cdc_api_key: Optional[str] = os.getenv("CDC_API_KEY")
     fda_api_key: Optional[str] = os.getenv("FDA_API_KEY")
@@ -27,7 +30,13 @@ class Settings:
     idsp_api_key: Optional[str] = os.getenv("IDSP_API_KEY")
 
     # Database Configuration - Updated to match user's .env
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./health_chatbot.db")
+    postgres_user: str = os.getenv("POSTGRES_USER", "postgres")
+    postgres_password: str = os.getenv("POSTGRES_PASSWORD", "postgrespassword")
+    postgres_db: str = os.getenv("POSTGRES_DB", "healthbot")
+    database_url: str = os.getenv(
+        "DATABASE_URL",
+        f"postgresql://{postgres_user}:{postgres_password}@db:5632/{postgres_db}"
+    )
 
     # SMS/WhatsApp Configuration - Updated to match user's .env structure
     # WhatsApp (user has different variable names)
@@ -59,6 +68,12 @@ class Settings:
     rasa_api_url: str = os.getenv("RASA_API_URL", "http://localhost:5005")
     rasa_actions_url: str = os.getenv("RASA_ACTIONS_URL", "http://localhost:5055")
     rasa_url: str = os.getenv("RASA_URL", "http://localhost:5005")
+
+    # Ollama / LLM settings (new)
+    use_llm: bool = os.getenv("USE_LLM", "false").lower() == "true"
+    ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3")
+    ollama_timeout: int = int(os.getenv("OLLAMA_TIMEOUT", "30"))
 
     # Free APIs (no keys required)
     disease_sh_base_url: str = "https://disease.sh/v3/covid-19"
